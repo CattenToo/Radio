@@ -69,7 +69,7 @@ public class SpeakerListener implements Listener {
     @EventHandler
     public void onItemCraftered(CrafterCraftEvent e)
     {
-        if (!Speaker.is(e.getRecipe().getResult()))
+        if (!Speaker.isSpeaker(e.getRecipe().getResult()))
             //not radio recipe so skip
             return;
 
@@ -79,7 +79,7 @@ public class SpeakerListener implements Listener {
         ItemStack[] mtx = ((Crafter)e.getBlock().getState()).getInventory().getContents();
 
         //update result (tbh not sure if this is necessary)
-        e.setResult(FrequencyManager.addFrequencyToCraft(result, mtx, RadioConfig.fieldRadio_recipe_basic_shape));
+        e.setResult(FrequencyManager.addFrequencyToCraft(result, mtx, RadioConfig.speaker_recipe_basic_shape));
     }
 
     @EventHandler
@@ -89,7 +89,7 @@ public class SpeakerListener implements Listener {
             //invalid recipe so skip
             return;
 
-        if (!FieldRadio.isRadio(e.getRecipe().getResult()))
+        if (!Speaker.isSpeaker(e.getRecipe().getResult()))
             //not radio recipe so skip
             return;
 
@@ -99,6 +99,6 @@ public class SpeakerListener implements Listener {
         ItemStack[] mtx = e.getInventory().getMatrix();
 
         //update result (tbh not sure if this is necessary)
-        e.getInventory().setResult(FrequencyManager.addFrequencyToCraft(result, mtx, RadioConfig.fieldRadio_recipe_basic_shape));
+        e.getInventory().setResult(FrequencyManager.addFrequencyToCraft(result, mtx, RadioConfig.speaker_recipe_basic_shape));
     }
 }

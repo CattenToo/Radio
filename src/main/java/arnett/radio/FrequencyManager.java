@@ -76,18 +76,10 @@ public class FrequencyManager {
                         displayFrequency.append(RadioConfig.frequencySplitString);
                         dyesChecker[digit] = RadioConfig.frequencyRepresentationDyes.getString(dyeName);
                     }
-                    else {
-                        //has been added so check if it is the same as the others for this level
-                        if(dyesChecker[digit].equals(RadioConfig.frequencyRepresentationDyes.getString(dyeName)))
-                        {
-                            frequency.append(dyeName);
-                            displayFrequency.append(RadioConfig.frequencyRepresentationDyes.getString(dyeName));
-                        }
-                        else
-                        {
-                            //invalid recipe
-                            return ItemStack.of(Material.AIR);
-                        }
+                    else if(!dyesChecker[digit].equals(RadioConfig.frequencyRepresentationDyes.getString(dyeName)))
+                    {
+                        //invalid recipe
+                        return ItemStack.of(Material.AIR);
                     }
                 }
             }
