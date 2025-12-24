@@ -1,0 +1,82 @@
+# enable the plugin
+enabled: true
+
+frequency-representation:
+  dyes:
+    WHITE: "Whi"
+    LIGHT_GRAY: "LGr"
+    GRAY: "Gra"
+    BLACK: "Bla"
+    BROWN: "Bro"
+    RED: "Red"
+    ORANGE: "Ora"
+    YELLOW: "Yel"
+    LIME: "Lim"
+    GREEN: "Gre"
+    CYAN: "Cya"
+    LIGHT_BLUE: "LBl"
+    BLUE: "Blu"
+    PURPLE: "Pur"
+    MAGENTA: "Mag"
+    PINK: "Pin"
+  separating-string: "-"
+
+# Field Radio
+fieldradio:
+  audio-filter:
+    enabled: true
+    LP-alpha: 0.8  # Lower = more muffled
+    HP-alpha: 0.85 # Higher = less bass
+    noise-floor: 75  # Constant hiss volume
+    crackle-chance: 3000 # 1 in 3000 chance per sample
+
+  # this is so that the radio doesn't cut out at the end
+  # 200000000 is default at what I believe is .2s
+  # this is milliseconds and is NOT based off ticks
+  grace-period: 200000000
+
+  recipe:
+    basic:
+      enabled: true
+
+      # Use 0 for main frequency and numbers 1 - 9 for subfrequencies,
+      # Recommended to have a main frequency and one subfrequency
+      shape:
+        - "C01"
+        - "IAI"
+        - "IRI"
+      ingredients:
+        C: "COPPER_INGOT"
+        I: "IRON_INGOT"
+        R: "REDSTONE"
+        A: "AMETHYST_SHARD"
+
+speaker:
+  use-entity: false
+  max-speaker-cache-size: 8
+
+  recipe:
+    basic:
+      enabled: true
+
+      # Use 0 for main frequency and numbers 1 - 9 for subfrequencies,
+      # Recommended to have only a main frequency
+      shape:
+        - "0A0"
+        - "IRI"
+        - "CJC"
+      ingredients:
+        C: "COPPER_INGOT"
+        I: "IRON_INGOT"
+        R: "REDSTONE"
+        A: "AMETHYST_SHARD"
+        J: "JUKEBOX"
+
+  #used if use-entity is set to false
+  block:
+    # if changing the head type you MUST update which texture is overridden in the resource pack as well
+    # to override that head, Don't forget about that part
+    head-type: "PIGLIN_HEAD"
+
+    #used if use-entity is set to true
+  entity:

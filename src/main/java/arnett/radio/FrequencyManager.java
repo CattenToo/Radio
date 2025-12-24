@@ -1,0 +1,237 @@
+package arnett.radio;
+
+import arnett.radio.Items.CustomItemManager;
+import com.destroystokyo.paper.MaterialTags;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.format.TextColor;
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.Recipe;
+import org.bukkit.inventory.RecipeChoice;
+import org.bukkit.inventory.ShapedRecipe;
+import org.bukkit.persistence.PersistentDataType;
+
+import java.util.List;
+
+public class FrequencyManager {
+
+    //stores which frequency an item is connected to
+    public static final NamespacedKey radioFrequencyKey = new NamespacedKey(Radio.singleton, "frequency");
+
+    //stores which dye tab belongs to which dye and vice versa
+    //normal is Dye names
+    //inverse is custom names
+    public static BiMap<String, String> dyeMap = HashBiMap.create();
+
+    public static void reload()
+    {
+        dyeMap.clear();
+
+        //sets up 2 way map for quick frequency color refrence
+        for (String key : RadioConfig.frequencyRepresentationDyes.getKeys(false)) {
+            Radio.logger.info(key);
+            Radio.logger.info(RadioConfig.frequencyRepresentationDyes.getString(key));
+            dyeMap.put(key, RadioConfig.frequencyRepresentationDyes.getString(key));
+        }
+    }
+
+    public static ItemStack addFrequencyToCraft(ItemStack result, ItemStack[] mtx, List<String> shape)
+    {
+        //get position of dyes
+        StringBuilder frequency = new StringBuilder();
+        StringBuilder displayFrequency = new StringBuilder();
+
+        //stores which dye was used for which frequency
+        //useful if recipe required two or more dyes for the same sub frequency
+        String[] dyesChecker = new String[8];
+
+        //check matrix for dyes in correct places
+        for(int i = 0; i < shape.size(); i++ )
+        {
+            for(int j = 0; j < shape.get(i).length(); j++)
+            {
+                char checked = shape.get(i).charAt(j);
+
+                if(Character.isDigit(checked))
+                {
+
+                    Material item = mtx[i*3 + j].getType();
+                    int digit = Character.getNumericValue(checked);
+                    String dyeName = item.name().substring(0, item.name().length()-4);
+
+                    //dye
+                    if(dyesChecker[digit] == null)
+                    {
+                        //has not yet been added
+                        //so just add dye to frequency and to dyes checker
+                        frequency.append(dyeName);
+                        frequency.append(RadioConfig.frequencySplitString);
+                        displayFrequency.append(RadioConfig.frequencyRepresentationDyes.getString(dyeName));
+                        displayFrequency.append(RadioConfig.frequencySplitString);
+                        dyesChecker[digit] = RadioConfig.frequencyRepresentationDyes.getString(dyeName);
+                    }
+                    else {
+                        //has been added so check if it is the same as the others for this level
+                        if(dyesChecker[digit].equals(RadioConfig.frequencyRepresentationDyes.getString(dyeName)))
+                        {
+                            frequency.append(dyeName);
+                            displayFrequency.append(RadioConfig.frequencyRepresentationDyes.getString(dyeName));
+                        }
+                        else
+                        {
+                            //invalid recipe
+                            return ItemStack.of(Material.AIR);
+                        }
+                    }
+                }
+            }
+        }
+
+        //chop off last bit (the / or .)
+        frequency.setLength(frequency.length() - 1);
+        displayFrequency.setLength(displayFrequency.length() - 1);
+
+        result.editPersistentDataContainer(pdc -> {
+            pdc.set(FrequencyManager.radioFrequencyKey, PersistentDataType.STRING, frequency.toString());
+        });
+
+        result.lore(List.of(Component.text(displayFrequency.toString())));
+
+        return result;
+    }
+
+    public static TextComponent getColoredFrequencyTag(String frequency)
+    {
+        //only used when displaying frequencies, not for logic
+        frequency = convertToDisplayFrequency(frequency);
+
+        //get main frequency now since it's used multiple times
+        String mainFq = frequency.substring(0, frequency.indexOf(RadioConfig.frequencySplitString));
+        TextColor mainFqTextColor = CustomItemManager.getFrequencyTextColor(mainFq);
+
+        TextComponent c = Component.text("<").color(mainFqTextColor);
+
+        String[] split = frequency.split(RadioConfig.frequencySplitString);
+        for(int i = 0; i < split.length; i++)
+        {
+            Radio.logger.info(split[i]);
+            c = c.append(Component.text(split[i] + (i == split.length - 1 ? "" : RadioConfig.frequencySplitString))
+                    .color(CustomItemManager.getFrequencyTextColor(split[i]))
+            );
+
+        }
+
+        c = c.append(Component.text( "> ")).color(mainFqTextColor);
+
+        return c;
+    }
+
+    public static TextComponent getColoredFrequencyMessage(String frequency, Player sender, Component message)
+    {
+        //only used when displaying frequencies, not for logic
+        frequency = convertToDisplayFrequency(frequency);
+
+        //not reusing code because compute optimization
+        String mainFq = frequency.substring(0, frequency.indexOf(RadioConfig.frequencySplitString));
+        TextColor mainFqTextColor = CustomItemManager.getFrequencyTextColor(mainFq);
+
+        TextComponent c = Component.text("<").color(mainFqTextColor);
+
+        String[] split = frequency.split(RadioConfig.frequencySplitString);
+        for(int i = 0; i < split.length; i++)
+        {
+            Radio.logger.info(split[i]);
+            c = c.append(Component.text(split[i] + (i == split.length - 1 ? "" : RadioConfig.frequencySplitString))
+                    .color(CustomItemManager.getFrequencyTextColor(split[i]))
+            );
+
+        }
+
+        c = c.append(Component.text( "> ")).color(mainFqTextColor)
+                .append(Component.text(sender.getName()).color(TextColor.color(CustomItemManager.getDulledFrequencyColor(split[split.length-1]).asRGB())))
+                .append(Component.text(": ")
+                        .append(message).color(TextColor.color(CustomItemManager.getDulledFrequencyColor(mainFq).asRGB())));;
+
+        return c;
+    }
+
+    public static String convertToDisplayFrequency(String frequency)
+    {
+        StringBuilder displayFrequency = new StringBuilder();
+
+        for(String str : frequency.split(RadioConfig.frequencySplitString))
+        {
+            String disp = FrequencyManager.dyeMap.get(str);
+
+            if(disp == null)
+                displayFrequency.append(str).append(RadioConfig.frequencySplitString);
+
+            displayFrequency.append(disp).append(RadioConfig.frequencySplitString);
+        }
+
+        displayFrequency.setLength(displayFrequency.length() - 1);
+
+        return displayFrequency.toString();
+    }
+
+    public static Recipe getFrequencyIndependentShapedRecipe(NamespacedKey idKey, ItemStack result, List<String> shape, ConfigurationSection ingredients)
+    {
+        ShapedRecipe recipe = new ShapedRecipe(idKey, result);
+
+        //get shape of recipe from config
+        recipe.shape(shape.toArray(String[]::new));
+
+        //allows for all dye types to be used in a slot
+        RecipeChoice.MaterialChoice dyes = new RecipeChoice.MaterialChoice(MaterialTags.DYES);
+
+        //defines the ingredients (the letters in the shape)
+        if (ingredients != null) {
+            for (String key : ingredients.getKeys(false)) {
+
+                //just a basic material
+                Material mat;
+                try{
+                    mat = Material.matchMaterial(ingredients.getString(key));
+                }
+                catch (Exception e)
+                {
+                    //material not found or something went wrong
+                    Radio.logger.info("Incorrectly registered Material For Radio basic recipe");
+                    mat = Material.AIR;
+                }
+                if (mat != null) {
+                    recipe.setIngredient(key.charAt(0), mat);
+                }
+            }
+        }
+
+        //add dyes
+        for(int i = 0; i < 8; i++)
+        {
+            try
+            {
+                recipe.setIngredient((char)( i + '0'), dyes);
+                Radio.logger.info("Added Dye for " + i);
+            }
+            catch (Exception e)
+            {
+                Radio.logger.info("stopped at " + i);
+                //frequency not in recipe so exit
+                break;
+            }
+        }
+
+        return recipe;
+    }
+
+    public static void sendPacketToFrequency()
+    {
+
+    }
+}

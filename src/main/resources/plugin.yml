@@ -1,0 +1,13 @@
+name: Radio
+version: '1.2'
+main: arnett.radio.Radio
+api-version: '1.21'
+
+commands:
+  fieldradio:
+    description: Main command
+    aliases: [fieldradio, radio]
+    permission: radio.use
+    usage: "Incorrect Usage (/radio <subcommand> ...)"
+
+softdepend: [voicechat]
