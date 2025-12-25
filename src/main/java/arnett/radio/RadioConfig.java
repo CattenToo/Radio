@@ -34,6 +34,7 @@ public class RadioConfig {
     //speaker
     public static boolean speaker_useEntity;
     public static int speaker_maxSpeakerCacheSize;
+    public static int speaker_soundRange;
 
         // Recipe
         public static boolean speaker_recipe_basic_enabled;
@@ -75,6 +76,7 @@ public class RadioConfig {
         //speaker
         speaker_useEntity = Radio.config.getBoolean("speaker.use-entity");
         speaker_maxSpeakerCacheSize = Radio.config.getInt("speaker.max-speaker-cache-size");
+        speaker_soundRange = Radio.config.getInt("speaker.sound-range");
 
             // Recipe
             speaker_recipe_basic_enabled = Radio.config.getBoolean("speaker.recipe.basic.enabled");

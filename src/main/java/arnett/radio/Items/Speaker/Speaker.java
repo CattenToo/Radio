@@ -7,19 +7,22 @@ import arnett.radio.RadioVoiceChat;
 import com.destroystokyo.paper.MaterialTags;
 import de.maxhenkel.voicechat.api.ServerLevel;
 import de.maxhenkel.voicechat.api.audiochannel.AudioChannel;
+import de.maxhenkel.voicechat.api.audiochannel.LocationalAudioChannel;
 import de.maxhenkel.voicechat.api.events.MicrophonePacketEvent;
 import de.maxhenkel.voicechat.api.packets.MicrophonePacket;
 import de.maxhenkel.voicechat.api.packets.Packet;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import net.kyori.adventure.text.Component;
 import org.bukkit.*;
+import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.RecipeChoice;
 import org.bukkit.inventory.ShapedRecipe;
+import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -34,7 +37,7 @@ public class Speaker {
     // this is used to track active locational channels if using blocks since it's easier on the server
     // or active entity channels if not since they need to be entities anyway
     // active meaning that they are not in an unloaded chunk
-    public static ArrayList<PlacedSpeakerData> activeSpeakers = new ArrayList<>();
+    public static HashMap<String, ArrayList<AudioChannel>> activeSpeakers = new HashMap<>();
 
 
     public static ArrayList<Recipe> getRecipes()
@@ -57,6 +60,8 @@ public class Speaker {
         speaker.editPersistentDataContainer(pdc -> {
             pdc.set(FrequencyManager.radioFrequencyKey, PersistentDataType.STRING, frequency);
         });
+
+        speaker.lore(List.of(Component.text(FrequencyManager.convertToDisplayFrequency(frequency))));
 
         return speaker;
     }
@@ -105,7 +110,7 @@ public class Speaker {
 
     public static boolean isSpeaker(ItemStack item)
     {
-        //todo don't forfet to replace true when entity version is ready
+        //todo don't forget to replace true here when entity version is ready
         if(item.getType() != (RadioConfig.speaker_useEntity ? true : RadioConfig.speaker_block_headType))
             return false;
 
@@ -114,54 +119,99 @@ public class Speaker {
 
     public static void addActiveSpeaker(Location location, String frequency)
     {
-        Radio.logger.info("Added Speaker to list" + frequency);
-        //add it to the list (not an actual audio player since that will be handled per player)
-        activeSpeakers.add(new PlacedSpeakerData(location, frequency));
+        LocationalAudioChannel newAudioChannel = RadioVoiceChat.api.createLocationalAudioChannel(
+                UUID.randomUUID(),
+                RadioVoiceChat.api.fromServerLevel(location.getWorld()),
+                RadioVoiceChat.api.createPosition(location.getX(), location.getY(), location.getZ())
+        );
+
+        newAudioChannel.setDistance(RadioConfig.speaker_soundRange);
+
+        //add it to the list (create entry if not present)
+        activeSpeakers.computeIfAbsent(frequency, (fq) -> new ArrayList<>())
+                .add(newAudioChannel);
+
+        Radio.logger.info("Added Speaker to list " + frequency);
+        Radio.logger.info("at " + location.getX() + ", " + location.getY() + ", " + location.getZ());
     }
 
-    public static void removeActiveSpeaker(Location location, String frequency)
+    public static void removeActiveSpeaker(Location location)
     {
         //add it to the list (not an actual audio player since that will be handled per player)
         activeSpeakers.remove(location);
+
+        Radio.logger.info("Removed Speaker from list");
+        Radio.logger.info("at " + location.getX() + ", " + location.getY() + ", " + location.getZ());
     }
 
     public static void sendMicrophonePacketToFrequency(MicrophonePacketEvent e, String frequency)
     {
         //search active speakers for ones connected to frequency
-        activeSpeakers.forEach((speaker) -> {
+        activeSpeakers.computeIfAbsent(frequency, (fq) -> new ArrayList<>()).forEach((channel) -> {
 
-            //correct frequency?
-            if(!speaker.isOfFrequency(frequency))
-                return;
+            Radio.logger.info("Speaker Received Packed On" + frequency);
+            channel.send(e.getPacket());
 
-            UUID sender = e.getSenderConnection().getPlayer().getUuid();
-
-            if(sender == null)
-                return;
-
-            Radio.logger.info("Found Speaker to " + frequency);
-
-            Location location = speaker.getLocation();
-
-            //if sender is not cached, cache the sender and create the channel
-            if(!speaker.channels.containsKey(sender))
-            {
-                speaker.channels.put(sender, RadioVoiceChat.api.createLocationalAudioChannel(
-                        sender,
-
-                        //screw this one line of code specifically
-                        RadioVoiceChat.api.fromServerLevel(((CraftWorld)speaker.getLocation().getWorld()).getHandle()),
-
-                        RadioVoiceChat.api.createPosition(location.getX(), location.getY(), location.getZ()))
-                );
-
-                Radio.logger.info("Chached new Player" + Bukkit.getPlayer(sender));
-            }
-
-            //send the packet
-            speaker.channels.get(sender).send(e.getPacket());
         });
+
 
     }
 
+    public static void tagChunkOfSpeaker(Chunk chunk, Location blockLocation){
+
+        PersistentDataContainer chunkPdc = chunk.getPersistentDataContainer();
+
+        //add to the list
+        List<int[]> locationsList = chunkPdc.get(Speaker.speakerIdentifierKey, PersistentDataType.LIST.integerArrays());
+
+        //if it is not yet tagged
+        if(locationsList == null)
+            locationsList = List.of();
+
+        ArrayList<int[]> locationsArray = new ArrayList<>(locationsList);
+
+        locationsArray.add(new int[]{
+                blockLocation.getBlockX(),
+                blockLocation.getBlockY(),
+                blockLocation.getBlockZ()
+        });
+
+        //tag the chunk or update the tag
+        chunkPdc.set(Speaker.speakerIdentifierKey, PersistentDataType.LIST.integerArrays(), locationsArray);
+    }
+
+    public static void untagChunkOfSpeaker(Chunk chunk, Location blockLocation){
+
+        PersistentDataContainer chunkPdc = chunk.getPersistentDataContainer();
+
+        //check if chunk is tagged in the first place
+        List<int[]> locationsList = chunkPdc.get(Speaker.speakerIdentifierKey, PersistentDataType.LIST.integerArrays());
+
+        //if it is not yet tagged
+        if(locationsList == null)
+            return;
+
+        ArrayList<int[]> locationsArray = new ArrayList<>(locationsList);
+
+        // remove if the locations match
+        // this is a little inefficient since we keep going after we remove the one at the location,
+        // but just in case there are multiple from the same spot for some reason this will take care of it
+        locationsArray.removeIf((location ->
+                location[0] == blockLocation.getBlockX() &&
+                location[1] == blockLocation.getBlockY() &&
+                location[2] == blockLocation.getBlockZ()
+        ));
+
+        //tag the chunk or update the tag
+        chunkPdc.set(Speaker.speakerIdentifierKey, PersistentDataType.LIST.integerArrays(), locationsArray);
+    }
+
+
+    public static boolean isBlockSpeaker(Block block){
+        //is the block the specified head type
+        if(!block.getType().equals(RadioConfig.speaker_block_headType))
+            return false;
+
+        return true;
+    }
 }

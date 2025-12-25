@@ -54,6 +54,7 @@ fieldradio:
 speaker:
   use-entity: false
   max-speaker-cache-size: 8
+  sound-range: 32
 
   recipe:
     basic:
