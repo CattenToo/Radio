@@ -1,7 +1,6 @@
 package arnett.radio.Items.Speaker;
 
 import arnett.radio.FrequencyManager;
-import arnett.radio.Items.Radio.FieldRadio;
 import arnett.radio.RadioConfig;
 import com.destroystokyo.paper.event.block.BlockDestroyEvent;
 import org.bukkit.Location;
@@ -14,10 +13,8 @@ import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class SpeakerListener implements Listener {
@@ -32,9 +29,7 @@ public class SpeakerListener implements Listener {
         if(!e.getBlock().getType().equals(RadioConfig.speaker_block_headType))
             return;
 
-        String frequency = e.getItemInHand().getPersistentDataContainer().getOrDefault(
-                FrequencyManager.radioFrequencyKey, PersistentDataType.STRING, ""
-        );
+        String frequency = FrequencyManager.getFrequency(e.getItemInHand());
 
         //check if this has been tagged with a frequency, if not it's probably just a regular head
         if(frequency.isEmpty())
@@ -43,8 +38,8 @@ public class SpeakerListener implements Listener {
         //speaker has been placed
         Location blockLocation = e.getBlock().getLocation();
 
-        //tag the chunk
-        Speaker.tagChunkOfSpeaker(e.getBlock().getChunk(), blockLocation);
+        //tag the chunk (to easily find later)
+        Speaker.tagChunkOfSpeaker(e.getBlock().getChunk(), blockLocation, frequency);
 
         //add it to the list
         Speaker.addActiveSpeaker(blockLocation, frequency);
@@ -64,8 +59,12 @@ public class SpeakerListener implements Listener {
         if(!Speaker.isBlockSpeaker(e.getBlock()))
             return;
 
+        //untag the chunk
+        Speaker.untagChunkOfSpeaker(e.getBlock().getChunk(), e.getBlock().getLocation());
+
         //Speaker block was destroyed
         Speaker.removeActiveSpeaker(e.getBlock().getLocation());
+
     }
 
     @EventHandler
@@ -81,6 +80,9 @@ public class SpeakerListener implements Listener {
             //Was it a Speaker block destroyed
             if(!Speaker.isBlockSpeaker(block))
                 return;
+
+            //untag the chunk
+            Speaker.untagChunkOfSpeaker(block.getChunk(), block.getLocation());
 
             //Speaker block was destroyed
             Speaker.removeActiveSpeaker(block.getLocation());
@@ -102,6 +104,9 @@ public class SpeakerListener implements Listener {
             if(!Speaker.isBlockSpeaker(block))
                 return;
 
+            //untag the chunk
+            Speaker.untagChunkOfSpeaker(block.getChunk(), block.getLocation());
+
             //Speaker block was destroyed
             Speaker.removeActiveSpeaker(block.getLocation());
         });
@@ -122,6 +127,9 @@ public class SpeakerListener implements Listener {
         if(!Speaker.isBlockSpeaker(e.getBlock()))
             return;
 
+        //untag the chunk
+        Speaker.untagChunkOfSpeaker(e.getBlock().getChunk(), e.getBlock().getLocation());
+
         //Speaker block was destroyed
         Speaker.removeActiveSpeaker(e.getBlock().getLocation());
     }
@@ -137,19 +145,35 @@ public class SpeakerListener implements Listener {
             return;
 
         //tag is present
-        int[] pos = e.getChunk().getPersistentDataContainer().get(Speaker.speakerIdentifierKey, PersistentDataType.INTEGER_ARRAY);
+        List<int[]> speakers = e.getChunk().getPersistentDataContainer().get(Speaker.speakerIdentifierKey, PersistentDataType.LIST.integerArrays());
 
-        // should always exist and equal three but im going to check anyway
-        // maybe someone screwed with the world data, idk
-        if(pos == null || pos.length != 3)
-            return;
-
-        //check location of the tag to see if there is a speaker there
-        // the (# & 15) part is mostly equivalent to (# % 16) but faster since it's a bit mask
-        if(!e.getChunk().getBlock(pos[0] & 15, pos[1], pos[2] & 15).getType().equals(RadioConfig.speaker_block_headType))
+        if(speakers == null)
         {
-            //add it to the list
-            //todo add this and test the block removal events
+            //some error happened in storage, anyway, there's no speakers so remove it
+            e.getChunk().getPersistentDataContainer().remove(Speaker.speakerIdentifierKey);
+            return;
+        }
+
+
+        for(int[] tag : speakers)
+        {
+            // btw tag is stored as the first three numbers being the location
+            // and everything else being the numerical representation of the frequency
+
+            //make sure it exists and isn't too small
+            if(tag == null || tag.length < 3)
+                return;
+
+            //check location of the tag to see if there is a speaker there
+            // the (# & 15) part is mostly equivalent to (# % 16) but faster since it's a bit mask
+            if(!e.getChunk().getBlock(tag[0] & 15, tag[1], tag[2] & 15).getType().equals(RadioConfig.speaker_block_headType))
+            {
+                //get the frequency
+                String frequency = FrequencyManager.convertIntToFrequency(tag, 3);
+
+                //add it to the list
+                Speaker.addActiveSpeaker(new Location(e.getWorld(), tag[0], tag[1], tag[2]), frequency);
+            }
         }
     }
 
@@ -162,16 +186,25 @@ public class SpeakerListener implements Listener {
             return;
 
         //tag is present
-        int[] pos = e.getChunk().getPersistentDataContainer().get(Speaker.speakerIdentifierKey, PersistentDataType.INTEGER_ARRAY);
+        List<int[]> speakers = e.getChunk().getPersistentDataContainer().get(Speaker.speakerIdentifierKey, PersistentDataType.LIST.integerArrays());
 
-        // should always exist and equal three but im going to check anyway
-        // maybe someone screwed with the world data, idk
-        if(pos == null || pos.length != 3)
+        if(speakers == null)
+        {
+            //some error happened in storage, anyway, there's no speakers so remove it
+            e.getChunk().getPersistentDataContainer().remove(Speaker.speakerIdentifierKey);
             return;
+        }
 
-        // just remove it, don't need to check if it's the right block since
-        // if nothing is present in the active list nothing will happen anyway
-        Speaker.removeActiveSpeaker(new Location(e.getWorld(), pos[0], pos[1], pos[2]));
+        for(int[] tag : speakers)
+        {
+            //make sure it exists and isn't too small
+            if(tag == null || tag.length < 3)
+                return;
+
+            // just remove it, don't need to check if it's the right block since
+            // if nothing is present in the active list nothing will happen anyway
+            Speaker.removeActiveSpeaker(new Location(e.getWorld(), tag[0], tag[1], tag[2]));
+        }
     }
 
     //todo test

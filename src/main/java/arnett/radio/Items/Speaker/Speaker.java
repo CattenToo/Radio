@@ -5,6 +5,7 @@ import arnett.radio.FrequencyManager;
 import arnett.radio.Radio;
 import arnett.radio.RadioVoiceChat;
 import com.destroystokyo.paper.MaterialTags;
+import de.maxhenkel.voicechat.api.Position;
 import de.maxhenkel.voicechat.api.ServerLevel;
 import de.maxhenkel.voicechat.api.audiochannel.AudioChannel;
 import de.maxhenkel.voicechat.api.audiochannel.LocationalAudioChannel;
@@ -36,8 +37,9 @@ public class Speaker {
 
     // this is used to track active locational channels if using blocks since it's easier on the server
     // or active entity channels if not since they need to be entities anyway
-    // active meaning that they are not in an unloaded chunk
-    public static HashMap<String, ArrayList<AudioChannel>> activeSpeakers = new HashMap<>();
+    // active meaning that they are not in an unloaded chunk.
+    // Frequencies map to maps of Worlds which contain the list of channels, it's not that bad
+    public static HashMap<String, HashMap<World, ArrayList<AudioChannel>>> activeSpeakers = new HashMap<>();
 
 
     public static ArrayList<Recipe> getRecipes()
@@ -128,8 +130,9 @@ public class Speaker {
         newAudioChannel.setDistance(RadioConfig.speaker_soundRange);
 
         //add it to the list (create entry if not present)
-        activeSpeakers.computeIfAbsent(frequency, (fq) -> new ArrayList<>())
-                .add(newAudioChannel);
+        activeSpeakers.computeIfAbsent(frequency, (fq) -> new HashMap<>())
+                .computeIfAbsent(location.getWorld(), (world) -> new ArrayList<>())
+                    .add(newAudioChannel);
 
         Radio.logger.info("Added Speaker to list " + frequency);
         Radio.logger.info("at " + location.getX() + ", " + location.getY() + ", " + location.getZ());
@@ -137,27 +140,50 @@ public class Speaker {
 
     public static void removeActiveSpeaker(Location location)
     {
-        //add it to the list (not an actual audio player since that will be handled per player)
-        activeSpeakers.remove(location);
+        //remove it from the list by checking the x y z and world
+        activeSpeakers.entrySet().removeIf((frequencyMapEntry) ->{
+            frequencyMapEntry.getValue().entrySet().removeIf((worldEnrty) -> {
+                worldEnrty.getValue().removeIf((audioChannel) -> {
 
-        Radio.logger.info("Removed Speaker from list");
+                    Radio.logger.info("Checking");
+                    Radio.logger.info(location.getBlockX() + " " + ((LocationalAudioChannel)audioChannel).getLocation().getX());
+                    Radio.logger.info("" + (location.getBlockX() == (int)((LocationalAudioChannel)audioChannel).getLocation().getX()));
+                    Radio.logger.info(location.getBlockY() + " " + ((LocationalAudioChannel)audioChannel).getLocation().getY());
+                    Radio.logger.info("" + (location.getBlockY() == (int)((LocationalAudioChannel)audioChannel).getLocation().getY()));
+                    Radio.logger.info(location.getBlockZ() + " " + ((LocationalAudioChannel)audioChannel).getLocation().getZ());
+                    Radio.logger.info("" + (location.getBlockZ() == (int)((LocationalAudioChannel)audioChannel).getLocation().getZ()));
+                    Radio.logger.info(location.getWorld().getName() + " " + worldEnrty.getKey().getName() + " " + location.getWorld().equals(worldEnrty.getKey()));
+
+                    return audioChannel instanceof LocationalAudioChannel channel &&
+                            location.getBlockX() == (int)channel.getLocation().getX() &&
+                            location.getBlockY() == (int)channel.getLocation().getY() &&
+                            location.getBlockZ() == (int)channel.getLocation().getZ() &&
+                            location.getWorld().equals(worldEnrty.getKey());
+                });
+
+                //clear any empty entries
+                return worldEnrty.getValue().isEmpty();
+            });
+
+            //clear any empty entries
+            return frequencyMapEntry.getValue().isEmpty();
+        });
+
+        Radio.logger.info("Removed Speaker from list ");
         Radio.logger.info("at " + location.getX() + ", " + location.getY() + ", " + location.getZ());
     }
 
     public static void sendMicrophonePacketToFrequency(MicrophonePacketEvent e, String frequency)
     {
         //search active speakers for ones connected to frequency
-        activeSpeakers.computeIfAbsent(frequency, (fq) -> new ArrayList<>()).forEach((channel) -> {
-
-            Radio.logger.info("Speaker Received Packed On" + frequency);
-            channel.send(e.getPacket());
-
+        activeSpeakers.getOrDefault(frequency, new HashMap<>()).forEach((world, channelList)->{
+            channelList.forEach((channel)->{
+                channel.send(e.getPacket());
+            });
         });
-
-
     }
 
-    public static void tagChunkOfSpeaker(Chunk chunk, Location blockLocation){
+    public static void tagChunkOfSpeaker(Chunk chunk, Location blockLocation, String frequency){
 
         PersistentDataContainer chunkPdc = chunk.getPersistentDataContainer();
 
@@ -170,11 +196,21 @@ public class Speaker {
 
         ArrayList<int[]> locationsArray = new ArrayList<>(locationsList);
 
-        locationsArray.add(new int[]{
-                blockLocation.getBlockX(),
-                blockLocation.getBlockY(),
-                blockLocation.getBlockZ()
-        });
+        //get the int representation of the frequency so we can tag the frequency as well
+        int[] freqInts = FrequencyManager.convertToIntFrequency(frequency);
+
+        int[] arr = new int[3 + freqInts.length];
+
+        //location
+        arr[0] = blockLocation.getBlockX();
+        arr[1] = blockLocation.getBlockY();
+        arr[2] = blockLocation.getBlockZ();
+
+        //add the frequency
+        for(int i = 0; i < freqInts.length; i++)
+        {
+            arr[3 + i] = freqInts[i];
+        }
 
         //tag the chunk or update the tag
         chunkPdc.set(Speaker.speakerIdentifierKey, PersistentDataType.LIST.integerArrays(), locationsArray);

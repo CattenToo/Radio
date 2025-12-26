@@ -52,7 +52,9 @@ fieldradio:
         A: "AMETHYST_SHARD"
 
 speaker:
+  # currentley no functionality for using entities instead
   use-entity: false
+
   max-speaker-cache-size: 8
   sound-range: 32
 

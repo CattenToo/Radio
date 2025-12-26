@@ -1,5 +1,6 @@
 package arnett.radio.Items.Radio;
 
+import arnett.radio.FrequencyManager;
 import arnett.radio.RadioConfig;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -105,11 +106,6 @@ public class FieldRadioVoiceChat {
         return isOnFrequency(frequency, target);
     }
 
-    public static Map<String, ArrayList<UUID>> getFrequencys()
-    {
-        return Collections.unmodifiableMap(frequencyListeners);
-    }
-
     public static void removeFromGrace(UUID id)
     {
         playersInGracePeroid.remove(id);
@@ -122,7 +118,7 @@ public class FieldRadioVoiceChat {
         ItemStack[] radios = FieldRadio.getRadiosFromPlayer(target);
 
         for(ItemStack radio : radios)
-            addToFrequency(FieldRadio.getFrequency(radio), target.getUniqueId());
+            addToFrequency(FrequencyManager.getFrequency(radio), target.getUniqueId());
     }
 
     public static void refresh(String frequency, Player target){
@@ -132,8 +128,8 @@ public class FieldRadioVoiceChat {
         ItemStack[] radios = FieldRadio.getRadiosFromPlayer(target);
 
         for(ItemStack radio : radios)
-            if(FieldRadio.getFrequency(radio).equalsIgnoreCase(frequency))
-                addToFrequency(FieldRadio.getFrequency(radio), target.getUniqueId());
+            if(FrequencyManager.getFrequency(radio).equalsIgnoreCase(frequency))
+                addToFrequency(FrequencyManager.getFrequency(radio), target.getUniqueId());
     }
 
     public static short[] applyFilter(short[] decodedData)

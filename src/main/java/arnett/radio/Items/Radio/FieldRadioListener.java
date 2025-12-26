@@ -51,7 +51,7 @@ public class FieldRadioListener implements Listener {
 
         });
 
-        String frequency = FieldRadio.getFrequency(sendingRadio.get());
+        String frequency = FrequencyManager.getFrequency(sendingRadio.get());
 
 
         Radio.logger.info("Message Sent on Frequency <" + frequency + "> by " + e.getPlayer().getName() + ": " + PlainTextComponentSerializer.plainText().serialize(e.message()));

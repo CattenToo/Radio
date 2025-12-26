@@ -3,7 +3,6 @@ package arnett.radio.Items.Radio;
 import arnett.radio.RadioConfig;
 import arnett.radio.FrequencyManager;
 import arnett.radio.Radio;
-import com.destroystokyo.paper.MaterialTags;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.Consumable;
 import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
@@ -11,7 +10,6 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.DyeColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.*;
 import org.bukkit.persistence.PersistentDataType;
@@ -130,14 +128,9 @@ public class FieldRadio {
                 .toArray(ItemStack[]::new);
     }
 
-    public static String getFrequency(ItemStack radio)
-    {
-        return radio.getPersistentDataContainer().getOrDefault(FrequencyManager.radioFrequencyKey, PersistentDataType.STRING, "none");
-    }
-
     public static Boolean matchingFrequencies(ItemStack radio1, ItemStack radio2)
     {
-        return getFrequency(radio1).equals(getFrequency(radio2));
+        return FrequencyManager.getFrequency(radio1).equals(FrequencyManager.getFrequency(radio2));
     }
 
     public static int getFrequencyColor(String frequency)

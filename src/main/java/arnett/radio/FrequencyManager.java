@@ -1,6 +1,7 @@
 package arnett.radio;
 
 import arnett.radio.Items.CustomItemManager;
+import arnett.radio.Items.Radio.FieldRadio;
 import com.destroystokyo.paper.MaterialTags;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
@@ -9,6 +10,7 @@ import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -17,6 +19,7 @@ import org.bukkit.inventory.RecipeChoice;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.persistence.PersistentDataType;
 
+import java.util.HashMap;
 import java.util.List;
 
 public class FrequencyManager {
@@ -27,17 +30,23 @@ public class FrequencyManager {
     //stores which dye tab belongs to which dye and vice versa
     //normal is Dye names
     //inverse is custom names
-    public static BiMap<String, String> dyeMap = HashBiMap.create();
+    public static HashBiMap<String, String> dyeMap = HashBiMap.create();
+
+    //hashbimap fast for getting stuff
+    static HashBiMap<String, Integer> numberedDyes = HashBiMap.create();
 
     public static void reload()
     {
         dyeMap.clear();
 
+        int i = 0;
         //sets up 2 way map for quick frequency color refrence
         for (String key : RadioConfig.frequencyRepresentationDyes.getKeys(false)) {
             Radio.logger.info(key);
             Radio.logger.info(RadioConfig.frequencyRepresentationDyes.getString(key));
             dyeMap.put(key, RadioConfig.frequencyRepresentationDyes.getString(key));
+            numberedDyes.put(key, i);
+            i++;
         }
     }
 
@@ -103,8 +112,14 @@ public class FrequencyManager {
         //only used when displaying frequencies, not for logic
         frequency = convertToDisplayFrequency(frequency);
 
+        int splitFirstIndex = frequency.indexOf(RadioConfig.frequencySplitString);
+
+        //if it doesn't have a split
+        if(splitFirstIndex == -1)
+            splitFirstIndex = frequency.length();
+
         //get main frequency now since it's used multiple times
-        String mainFq = frequency.substring(0, frequency.indexOf(RadioConfig.frequencySplitString));
+        String mainFq = frequency.substring(0, splitFirstIndex);
         TextColor mainFqTextColor = CustomItemManager.getFrequencyTextColor(mainFq);
 
         TextComponent c = Component.text("<").color(mainFqTextColor);
@@ -126,11 +141,18 @@ public class FrequencyManager {
 
     public static TextComponent getColoredFrequencyMessage(String frequency, Player sender, Component message)
     {
+        //almost the same as getColoredFrequencyTag but this also needs the colors from a couple more parts so It's reusing a lot of code
+
         //only used when displaying frequencies, not for logic
         frequency = convertToDisplayFrequency(frequency);
 
-        //not reusing code because compute optimization
-        String mainFq = frequency.substring(0, frequency.indexOf(RadioConfig.frequencySplitString));
+        int splitFirstIndex = frequency.indexOf(RadioConfig.frequencySplitString);
+
+        //if it doesn't have a split
+        if(splitFirstIndex == -1)
+            splitFirstIndex = frequency.length();
+
+        String mainFq = frequency.substring(0, splitFirstIndex);
         TextColor mainFqTextColor = CustomItemManager.getFrequencyTextColor(mainFq);
 
         TextComponent c = Component.text("<").color(mainFqTextColor);
@@ -225,5 +247,37 @@ public class FrequencyManager {
     public static void sendPacketToFrequency()
     {
 
+    }
+
+    public static String getFrequency(ItemStack item)
+    {
+        return item.getPersistentDataContainer().getOrDefault(radioFrequencyKey, PersistentDataType.STRING, "none");
+    }
+
+    public static int[] convertToIntFrequency(String frequency)
+    {
+        String[] split = frequency.split(RadioConfig.frequencySplitString);
+        int[] arr = new int[split.length];
+
+        //match the strings to their numbers
+        for(int i = 0; i < split.length; i++)
+        {
+            arr[i] = numberedDyes.getOrDefault(split[i], 0);
+        }
+
+        return arr;
+    }
+
+    public static String convertIntToFrequency(int[] arr, int startIndex)
+    {
+        StringBuilder frequency = new StringBuilder();
+
+        //match the strings to their numbers
+        for(int i = startIndex; i < arr.length; i++)
+        {
+            frequency.append(numberedDyes.inverse().getOrDefault(arr[i], "WHITE"));
+        }
+
+        return frequency.toString();
     }
 }

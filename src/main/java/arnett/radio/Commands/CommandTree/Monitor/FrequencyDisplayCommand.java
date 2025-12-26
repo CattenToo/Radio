@@ -1,6 +1,8 @@
 package arnett.radio.Commands.CommandTree.Monitor;
 
 import arnett.radio.Commands.SubCommand;
+import arnett.radio.Items.Speaker.Speaker;
+import arnett.radio.Radio;
 import arnett.radio.RadioConfig;
 import arnett.radio.FrequencyManager;
 import arnett.radio.Items.Radio.FieldRadioVoiceChat;
@@ -37,40 +39,60 @@ public class FrequencyDisplayCommand implements SubCommand {
         //this is just a permission check
         SubCommand.super.execute(player, args, level);
 
-        Map<String, ArrayList<UUID>> map = FieldRadioVoiceChat.getFrequencys();
-
         //monitoring frequency
         StringBuilder argFrequency = new StringBuilder();
 
-        for(String s : args)
-            argFrequency.append(s).append(RadioConfig.frequencySplitString);
+        for(int i = level; i < args.length; i++)
+            argFrequency.append(args[level]).append(RadioConfig.frequencySplitString);
 
-        StringBuilder playerList = new StringBuilder();
-        map.forEach((frequency, players) -> {
+        StringBuilder receiverList = new StringBuilder();
+
+        //field radios
+        FieldRadioVoiceChat.frequencyListeners.forEach((frequency, players) -> {
 
             //check if args match frequency
             if(!frequency.startsWith(argFrequency.toString()))
+            {
+                Radio.logger.info("Failed for" + argFrequency.toString() + " " + frequency);
                 return;
+            }
 
+            //list players
             for(UUID id : players)
             {
                 try {
-                    playerList.append(Bukkit.getPlayer(id).getName());
+                    receiverList.append(Bukkit.getPlayer(id).getName());
                 }
                 catch (NullPointerException e)
                 {
                     //player not online so Can't get name (this is slower btw)
-                    playerList.append(Bukkit.getOfflinePlayer(id).getName());
+                    receiverList.append(Bukkit.getOfflinePlayer(id).getName());
                 }
-                playerList.append(", ");
+                receiverList.append(" Field, ");
             }
 
             //display
             player.sendMessage(FrequencyManager.getColoredFrequencyTag(frequency)
-                    .append(Component.text(playerList.toString())));
+                    .append(Component.text(receiverList.toString())));
 
-            playerList.setLength(0);
+            receiverList.setLength(0);
         });
+
+        //speakers
+        {
+            Speaker.activeSpeakers.forEach((fq, map) -> {
+                if(fq.startsWith(argFrequency.toString()))
+                    map.forEach((world, audioChannels) -> {
+                        audioChannels.forEach((audioChannel -> {
+                            receiverList.append(fq).append(" Speaker, ");
+                        }));
+                    });
+            });
+
+            //display
+            player.sendMessage(Component.text("Speakers: ")
+                    .append(Component.text(receiverList.toString())));
+        }
 
         player.sendMessage(Component.text("Search Complete").decorate(TextDecoration.BOLD));
 
