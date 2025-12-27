@@ -145,15 +145,6 @@ public class Speaker {
             frequencyMapEntry.getValue().entrySet().removeIf((worldEnrty) -> {
                 worldEnrty.getValue().removeIf((audioChannel) -> {
 
-                    Radio.logger.info("Checking");
-                    Radio.logger.info(location.getBlockX() + " " + ((LocationalAudioChannel)audioChannel).getLocation().getX());
-                    Radio.logger.info("" + (location.getBlockX() == (int)((LocationalAudioChannel)audioChannel).getLocation().getX()));
-                    Radio.logger.info(location.getBlockY() + " " + ((LocationalAudioChannel)audioChannel).getLocation().getY());
-                    Radio.logger.info("" + (location.getBlockY() == (int)((LocationalAudioChannel)audioChannel).getLocation().getY()));
-                    Radio.logger.info(location.getBlockZ() + " " + ((LocationalAudioChannel)audioChannel).getLocation().getZ());
-                    Radio.logger.info("" + (location.getBlockZ() == (int)((LocationalAudioChannel)audioChannel).getLocation().getZ()));
-                    Radio.logger.info(location.getWorld().getName() + " " + worldEnrty.getKey().getName() + " " + location.getWorld().equals(worldEnrty.getKey()));
-
                     return audioChannel instanceof LocationalAudioChannel channel &&
                             location.getBlockX() == (int)channel.getLocation().getX() &&
                             location.getBlockY() == (int)channel.getLocation().getY() &&
@@ -212,8 +203,12 @@ public class Speaker {
             arr[3 + i] = freqInts[i];
         }
 
+        locationsArray.add(arr);
+
         //tag the chunk or update the tag
         chunkPdc.set(Speaker.speakerIdentifierKey, PersistentDataType.LIST.integerArrays(), locationsArray);
+
+        Radio.logger.info("Chunk Tagged");
     }
 
     public static void untagChunkOfSpeaker(Chunk chunk, Location blockLocation){
@@ -238,8 +233,17 @@ public class Speaker {
                 location[2] == blockLocation.getBlockZ()
         ));
 
-        //tag the chunk or update the tag
-        chunkPdc.set(Speaker.speakerIdentifierKey, PersistentDataType.LIST.integerArrays(), locationsArray);
+        //update the tag
+        if(!locationsArray.isEmpty())
+        {
+            chunkPdc.set(Speaker.speakerIdentifierKey, PersistentDataType.LIST.integerArrays(), locationsArray);
+        }
+        else {
+            //out of speakers
+            chunkPdc.remove(Speaker.speakerIdentifierKey);
+        }
+
+        Radio.logger.info("Chunk Untagged");
     }
 
 

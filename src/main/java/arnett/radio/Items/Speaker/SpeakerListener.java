@@ -1,6 +1,7 @@
 package arnett.radio.Items.Speaker;
 
 import arnett.radio.FrequencyManager;
+import arnett.radio.Radio;
 import arnett.radio.RadioConfig;
 import com.destroystokyo.paper.event.block.BlockDestroyEvent;
 import org.bukkit.Location;
@@ -134,8 +135,44 @@ public class SpeakerListener implements Listener {
         Speaker.removeActiveSpeaker(e.getBlock().getLocation());
     }
 
-    // was going to do piston extend / retract checks but then realized that
-    // heads just get destroyed so that's already covered by onBlockDestroyed
+    @EventHandler
+    public void onPistonExtend(BlockPistonExtendEvent e)
+    {
+        //piston extends obviously
+
+        e.getBlocks().forEach(block -> {
+            //Was it a Speaker block destroyed
+            if(!Speaker.isBlockSpeaker(block))
+                return;
+
+            //untag the chunk
+            Speaker.untagChunkOfSpeaker(block.getChunk(), block.getLocation());
+
+            //Speaker block was destroyed
+            Speaker.removeActiveSpeaker(block.getLocation());
+        });
+    }
+
+    @EventHandler
+    public void onBlockReplace(BlockFromToEvent e)
+    {
+        //block is replaced by another, like when water breaks redstone
+
+        //are we even using blocks for this project
+        if(RadioConfig.speaker_useEntity)
+            return;
+
+        //Was it a Speaker block destroyed
+        if(!Speaker.isBlockSpeaker(e.getToBlock()))
+            return;
+
+        //untag the chunk
+        Speaker.untagChunkOfSpeaker(e.getToBlock().getChunk(), e.getToBlock().getLocation());
+
+        //Speaker block was destroyed
+        Speaker.removeActiveSpeaker(e.getToBlock().getLocation());
+
+    }
 
     //chunk loading and deloading check
     @EventHandler
@@ -144,19 +181,24 @@ public class SpeakerListener implements Listener {
         if(!e.getChunk().getPersistentDataContainer().has(Speaker.speakerIdentifierKey))
             return;
 
+        Radio.logger.info("Found Tagged Chunk on LOAD");
+
         //tag is present
         List<int[]> speakers = e.getChunk().getPersistentDataContainer().get(Speaker.speakerIdentifierKey, PersistentDataType.LIST.integerArrays());
 
-        if(speakers == null)
+        if(speakers == null || speakers.isEmpty())
         {
             //some error happened in storage, anyway, there's no speakers so remove it
             e.getChunk().getPersistentDataContainer().remove(Speaker.speakerIdentifierKey);
             return;
         }
 
+        Radio.logger.info("Found Speaker Data");
 
         for(int[] tag : speakers)
         {
+            Radio.logger.info("checking tags");
+
             // btw tag is stored as the first three numbers being the location
             // and everything else being the numerical representation of the frequency
 
@@ -164,10 +206,12 @@ public class SpeakerListener implements Listener {
             if(tag == null || tag.length < 3)
                 return;
 
+            Radio.logger.info(e.getChunk().getBlock(tag[0] & 15, tag[1], tag[2] & 15).getType().name());
             //check location of the tag to see if there is a speaker there
             // the (# & 15) part is mostly equivalent to (# % 16) but faster since it's a bit mask
-            if(!e.getChunk().getBlock(tag[0] & 15, tag[1], tag[2] & 15).getType().equals(RadioConfig.speaker_block_headType))
+            if(e.getChunk().getBlock(tag[0] & 15, tag[1], tag[2] & 15).getType().equals(RadioConfig.speaker_block_headType))
             {
+                Radio.logger.info("found");
                 //get the frequency
                 String frequency = FrequencyManager.convertIntToFrequency(tag, 3);
 
@@ -185,18 +229,27 @@ public class SpeakerListener implements Listener {
         if(!e.getChunk().getPersistentDataContainer().has(Speaker.speakerIdentifierKey))
             return;
 
+        Radio.logger.info("Found Tagged Chunk on UNLOAD");
+
+        if(!e.getChunk().getPersistentDataContainer().has(Speaker.speakerIdentifierKey))
+            return;
+
         //tag is present
         List<int[]> speakers = e.getChunk().getPersistentDataContainer().get(Speaker.speakerIdentifierKey, PersistentDataType.LIST.integerArrays());
 
-        if(speakers == null)
+        if(speakers == null || speakers.isEmpty())
         {
             //some error happened in storage, anyway, there's no speakers so remove it
             e.getChunk().getPersistentDataContainer().remove(Speaker.speakerIdentifierKey);
             return;
         }
 
+        Radio.logger.info("Found Speaker Data");
+
         for(int[] tag : speakers)
         {
+            Radio.logger.info("checking tags");
+
             //make sure it exists and isn't too small
             if(tag == null || tag.length < 3)
                 return;
