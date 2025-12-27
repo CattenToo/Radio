@@ -43,6 +43,7 @@ public class RadioConfig {
 
         // block
         public static Material speaker_block_headType;
+        public static Material speaker_block_wallHeadType;
 
     // entity
 
@@ -85,6 +86,7 @@ public class RadioConfig {
 
             //block
             speaker_block_headType = Material.matchMaterial(Radio.config.getString("speaker.block.head-type"));
+            speaker_block_wallHeadType = Material.matchMaterial(Radio.config.getString("speaker.block.wall-head-type"));
 
             //entity
 

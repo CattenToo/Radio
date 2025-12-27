@@ -4,6 +4,7 @@ import arnett.radio.FrequencyManager;
 import arnett.radio.Radio;
 import arnett.radio.RadioConfig;
 import com.destroystokyo.paper.event.block.BlockDestroyEvent;
+import io.papermc.paper.event.block.BlockBreakBlockEvent;
 import org.bukkit.Location;
 import org.bukkit.block.Crafter;
 import org.bukkit.event.EventHandler;
@@ -27,7 +28,7 @@ public class SpeakerListener implements Listener {
             return;
 
         //is the block the specified head type
-        if(!e.getBlock().getType().equals(RadioConfig.speaker_block_headType))
+        if(!Speaker.isBlockSpeaker(e.getBlock()))
             return;
 
         String frequency = FrequencyManager.getFrequency(e.getItemInHand());
@@ -116,9 +117,7 @@ public class SpeakerListener implements Listener {
     @EventHandler
     public void onBlockDestroyed(BlockDestroyEvent e)
     {
-        // edge cases like piston breaking block, physics, and other things.
-        // This is more so being used just in case, since while using the head type,
-        // a lot of the things that trigger this don't apply
+        // tbh idk when this gets called, but it maybe does some times so might as well handle it.
 
         //are we even using blocks for this project
         if(RadioConfig.speaker_useEntity)
@@ -133,6 +132,9 @@ public class SpeakerListener implements Listener {
 
         //Speaker block was destroyed
         Speaker.removeActiveSpeaker(e.getBlock().getLocation());
+
+        //tbh i'm not sure when this will even get called, so I'm not dropping an item for this
+        e.setWillDrop(false);
     }
 
     @EventHandler
@@ -174,6 +176,44 @@ public class SpeakerListener implements Listener {
 
     }
 
+
+
+
+    //item drops
+
+
+
+    @EventHandler
+    public void onPlayerBreakBlock(BlockDropItemEvent e)
+    {
+        if(!Speaker.isBlockSpeaker(e.getBlock()))
+            return;
+
+        //tag the drop
+        e.getItems().forEach(item -> {
+            FrequencyManager.tagFrequency(item.getItemStack(), Speaker.getFrequencyOfSpeakerBlock(e.getBlock()));
+        });
+    }
+
+
+    @EventHandler
+    public void onBlockBreakBlock(BlockBreakBlockEvent e)
+    {
+        if(!Speaker.isBlockSpeaker(e.getBlock()))
+            return;
+
+        //tag the drop
+        e.getDrops().forEach(item -> {
+            FrequencyManager.tagFrequency(item, Speaker.getFrequencyOfSpeakerBlock(e.getBlock()));
+        });
+    }
+
+
+    //chunk loading
+
+
+
+
     //chunk loading and deloading check
     @EventHandler
     public void onChunkLoad(ChunkLoadEvent e)
@@ -209,7 +249,7 @@ public class SpeakerListener implements Listener {
             Radio.logger.info(e.getChunk().getBlock(tag[0] & 15, tag[1], tag[2] & 15).getType().name());
             //check location of the tag to see if there is a speaker there
             // the (# & 15) part is mostly equivalent to (# % 16) but faster since it's a bit mask
-            if(e.getChunk().getBlock(tag[0] & 15, tag[1], tag[2] & 15).getType().equals(RadioConfig.speaker_block_headType))
+            if(Speaker.isBlockSpeaker(e.getChunk().getBlock(tag[0] & 15, tag[1], tag[2] & 15)))
             {
                 Radio.logger.info("found");
                 //get the frequency

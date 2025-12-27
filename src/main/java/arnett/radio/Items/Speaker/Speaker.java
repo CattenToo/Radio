@@ -246,12 +246,30 @@ public class Speaker {
         Radio.logger.info("Chunk Untagged");
     }
 
+    public static String getFrequencyOfSpeakerBlock(Block block)
+    {
+        if(!block.getChunk().getPersistentDataContainer().has(speakerIdentifierKey))
+            return "none";
+
+        List<int[]> speakers = block.getChunk().getPersistentDataContainer().get(speakerIdentifierKey, PersistentDataType.LIST.integerArrays());
+
+        for (int[] arr : speakers)
+        {
+            if(arr[0] == (block.getLocation().blockX() & 15) &&
+                arr[1] == (block.getLocation().blockY()) &&
+                arr[2] == (block.getLocation().blockZ() & 15)) {
+
+                return FrequencyManager.convertIntToFrequency(arr, 3);
+            }
+        }
+
+        //shouldn't reach this
+        Radio.logger.warning("No Freqeucny found when scanning for Speaker");
+        return "none";
+    }
 
     public static boolean isBlockSpeaker(Block block){
         //is the block the specified head type
-        if(!block.getType().equals(RadioConfig.speaker_block_headType))
-            return false;
-
-        return true;
+        return block.getType().equals(RadioConfig.speaker_block_headType) || block.getType().equals(RadioConfig.speaker_block_wallHeadType);
     }
 }

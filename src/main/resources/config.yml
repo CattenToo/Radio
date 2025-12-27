@@ -81,5 +81,9 @@ speaker:
     # to override that head, Don't forget about that part
     head-type: "PIGLIN_HEAD"
 
+    # wall heads use a different material so while this could in theory be a different head type
+    # I recommend keeping this as just the wall variant of the head bing used for head-type
+    wall-head-type: "PIGLIN_WALL_HEAD"
+
     #used if use-entity is set to true
   entity:

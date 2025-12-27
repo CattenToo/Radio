@@ -26,7 +26,7 @@ public class GiveFieldRadioCommand implements SubCommand {
             frequency.append(args[i]).append(RadioConfig.frequencySplitString);
         }
 
-        frequency.setLength(frequency.length() - 1);
+        frequency.setLength(frequency.length() - RadioConfig.frequencySplitString.length());
 
         player.give(FieldRadio.getRadio(frequency.toString()));
         return true;

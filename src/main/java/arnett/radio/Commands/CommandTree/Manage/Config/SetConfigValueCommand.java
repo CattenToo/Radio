@@ -2,6 +2,7 @@ package arnett.radio.Commands.CommandTree.Manage.Config;
 
 import arnett.radio.Commands.SubCommand;
 import arnett.radio.Radio;
+import arnett.radio.RadioConfig;
 import org.bukkit.entity.Player;
 
 import java.util.List;
@@ -46,7 +47,7 @@ public class SetConfigValueCommand implements SubCommand {
             curr.append(args[i]).append(".");
         }
 
-        curr.setLength(curr.length() - 1);
+        curr.setLength(curr.length() - RadioConfig.frequencySplitString.length());
 
         Object previous = Radio.singleton.getConfig().get(curr.toString());
         Radio.singleton.getConfig().set(curr.toString(), args[level+1]);
@@ -83,7 +84,7 @@ public class SetConfigValueCommand implements SubCommand {
                     curr.append(args[i]).append(".");
                 }
 
-                curr.setLength(curr.length() - 1);
+                curr.setLength(curr.length() - RadioConfig.frequencySplitString.length());
 
                 return Radio.singleton.getConfig().getConfigurationSection(curr.toString()).getKeys(false).stream().toList();
             }

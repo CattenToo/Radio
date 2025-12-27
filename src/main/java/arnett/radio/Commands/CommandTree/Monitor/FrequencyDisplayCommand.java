@@ -45,6 +45,10 @@ public class FrequencyDisplayCommand implements SubCommand {
         for(int i = level; i < args.length; i++)
             argFrequency.append(args[level]).append(RadioConfig.frequencySplitString);
 
+        //cut off last split char
+        if(argFrequency.length() > RadioConfig.frequencySplitString.length())
+            argFrequency.setLength(argFrequency.length() - RadioConfig.frequencySplitString.length());
+
         StringBuilder receiverList = new StringBuilder();
 
         //field radios
@@ -90,7 +94,8 @@ public class FrequencyDisplayCommand implements SubCommand {
             });
 
             //display
-            player.sendMessage(Component.text("Speakers: ")
+            if(!receiverList.isEmpty())
+                player.sendMessage(Component.text("Speakers: ")
                     .append(Component.text(receiverList.toString())));
         }
 

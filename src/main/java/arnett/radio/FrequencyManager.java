@@ -95,12 +95,10 @@ public class FrequencyManager {
         }
 
         //chop off last bit (the / or .)
-        frequency.setLength(frequency.length() - 1);
-        displayFrequency.setLength(displayFrequency.length() - 1);
+        frequency.setLength(frequency.length() - RadioConfig.frequencySplitString.length());
+        displayFrequency.setLength(displayFrequency.length() - RadioConfig.frequencySplitString.length());
 
-        result.editPersistentDataContainer(pdc -> {
-            pdc.set(FrequencyManager.radioFrequencyKey, PersistentDataType.STRING, frequency.toString());
-        });
+        tagFrequency(result, frequency.toString());
 
         result.lore(List.of(Component.text(displayFrequency.toString())));
 
@@ -189,7 +187,7 @@ public class FrequencyManager {
             displayFrequency.append(disp).append(RadioConfig.frequencySplitString);
         }
 
-        displayFrequency.setLength(displayFrequency.length() - 1);
+        displayFrequency.setLength(displayFrequency.length() - RadioConfig.frequencySplitString.length());
 
         return displayFrequency.toString();
     }
@@ -244,11 +242,6 @@ public class FrequencyManager {
         return recipe;
     }
 
-    public static void sendPacketToFrequency()
-    {
-
-    }
-
     public static String getFrequency(ItemStack item)
     {
         return item.getPersistentDataContainer().getOrDefault(radioFrequencyKey, PersistentDataType.STRING, "none");
@@ -279,5 +272,16 @@ public class FrequencyManager {
         }
 
         return frequency.toString();
+    }
+
+    public static ItemStack tagFrequency(ItemStack stack, String frequency)
+    {
+        stack.editPersistentDataContainer(pdc -> {
+            pdc.set(FrequencyManager.radioFrequencyKey, PersistentDataType.STRING, frequency.toString());
+        });
+
+        stack.lore(List.of(Component.text(FrequencyManager.convertToDisplayFrequency(frequency))));
+
+        return stack;
     }
 }
