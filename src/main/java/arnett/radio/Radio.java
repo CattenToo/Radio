@@ -50,8 +50,7 @@ public final class Radio extends JavaPlugin {
         // registers listeners
         CustomItemManager.registerItemEvents(this);
 
-        //registers recipes
-        CustomItemManager.registerRecipies();
+        //registers recipes on reload config btw
 
         //register commands
         getCommand("fieldradio").setExecutor(new CommandManager(avaliablePlugins));
@@ -90,6 +89,10 @@ public final class Radio extends JavaPlugin {
 
         if(logger != null)
             FrequencyManager.reload();
+
+        CustomItemManager.reload();
+
+        logger.info("Reloaded Config");
     }
 
 }

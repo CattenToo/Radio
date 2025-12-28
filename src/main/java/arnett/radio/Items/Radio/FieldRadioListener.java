@@ -5,6 +5,7 @@ import arnett.radio.FrequencyManager;
 import arnett.radio.Radio;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import org.bukkit.Keyed;
 import org.bukkit.block.Crafter;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -74,8 +75,25 @@ public class FieldRadioListener implements Listener {
         //returns what is put in the crafting interface
         ItemStack[] mtx = ((Crafter)e.getBlock().getState()).getInventory().getContents();
 
-        //update result (tbh not sure if this is necessary)
-        e.setResult(FrequencyManager.addFrequencyToCraft(result, mtx, RadioConfig.fieldRadio_recipe_basic_shape));
+
+        //basic craft
+        if(e.getRecipe().getKey().equals(FieldRadio.radioCraftKey))
+        {
+            //update result (tbh not sure if this is necessary)
+            e.setResult(FrequencyManager.addFrequencyToCraft(result, mtx, RadioConfig.fieldRadio_recipe_basic_shape));
+        }
+
+        //retuning
+        else if(e.getRecipe().getKey().equals(FieldRadio.radioRetuneKey))
+        {
+            //update result (tbh not sure if this is necessary)
+            e.setResult(FrequencyManager.addFrequencyToCraft(result, mtx));
+        }
+
+        //Rut-roh!
+        else {
+            Radio.logger.warning("COULD NOT FIND FIELD-RADIO CRAFTER RECIPE");
+        }
     }
 
     @EventHandler
@@ -89,12 +107,29 @@ public class FieldRadioListener implements Listener {
             //not radio recipe so skip
             return;
 
+        if(!(e.getRecipe() instanceof Keyed keyedRecipe))
+            return;
+
         ItemStack result = e.getInventory().getResult();
 
         //returns what is put in the crafting interface
         ItemStack[] mtx = e.getInventory().getMatrix();
 
-        //update result (tbh not sure if this is necessary)
-        e.getInventory().setResult(FrequencyManager.addFrequencyToCraft(result, mtx, RadioConfig.fieldRadio_recipe_basic_shape));
+        if(keyedRecipe.getKey().equals(FieldRadio.radioCraftKey))
+        {
+            //update result
+            e.getInventory().setResult(FrequencyManager.addFrequencyToCraft(result, mtx, RadioConfig.fieldRadio_recipe_basic_shape));
+        }
+
+        else if(keyedRecipe.getKey().equals(FieldRadio.radioRetuneKey))
+        {
+            //update result
+            e.getInventory().setResult(FrequencyManager.addFrequencyToCraft(result, mtx));
+        }
+
+        //Rut-roh!
+        else {
+            Radio.logger.warning("COULD NOT FIND FIELD-RADIO CRAFT RECIPE");
+        }
     }
 }

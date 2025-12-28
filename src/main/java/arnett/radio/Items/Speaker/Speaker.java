@@ -17,10 +17,7 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.Recipe;
-import org.bukkit.inventory.RecipeChoice;
-import org.bukkit.inventory.ShapedRecipe;
+import org.bukkit.inventory.*;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
@@ -33,6 +30,10 @@ public class Speaker {
 
     //used both to identify speaker items and chunks that have speakers
     public static final NamespacedKey speakerIdentifierKey = new NamespacedKey(Radio.singleton, "speaker");
+
+    public static final NamespacedKey speakerCraftKey = new NamespacedKey(Radio.singleton, "speaker_craft");
+    public static final NamespacedKey speakerRetuneKey = new NamespacedKey(Radio.singleton, "speaker_retune");
+
     public static final NamespacedKey speakerModelKey = new NamespacedKey("radio", "speaker");
 
     // this is used to track active locational channels if using blocks since it's easier on the server
@@ -48,10 +49,44 @@ public class Speaker {
 
         // Plain Speaker
         if(RadioConfig.speaker_recipe_basic_enabled)
-            recipes.add(FrequencyManager.getFrequencyIndependentShapedRecipe(speakerIdentifierKey, getSpeaker(),
+            recipes.add(FrequencyManager.getFrequencyIndependentShapedRecipe(speakerCraftKey, getSpeaker(),
                 RadioConfig.speaker_recipe_basic_shape, RadioConfig.speaker_recipe_basic_ingredients));
 
+        //retuning
+        if(RadioConfig.speaker_recipe_retune_enabled)
+        {
+            ShapelessRecipe recipe = new ShapelessRecipe(speakerRetuneKey, getSpeaker());
+
+            List<String> ingredients = RadioConfig.speaker_recipe_retune_ingredients;
+
+            ingredients.forEach(i -> {
+                //special case RADIO
+                if(i.equals("SPEAKER"))
+                    recipe.addIngredient(RadioConfig.speaker_block_headType);
+
+                    //special case DYE for frequency
+                else if (i.equals("DYE"))
+                    recipe.addIngredient(new RecipeChoice.MaterialChoice(MaterialTags.DYES));
+
+                else {
+                    try {
+                        recipe.addIngredient(Material.matchMaterial(i));
+                    }
+                    catch (Exception e)
+                    {
+                        Radio.logger.warning("Invalid material provided for Speaker retune recipe: " + i);
+                    }
+                }
+            });
+
+            recipes.add(recipe);
+        }
         return  recipes;
+    }
+
+    public static NamespacedKey[] getRecipekeys()
+    {
+        return new NamespacedKey[]{speakerCraftKey, speakerRetuneKey};
     }
 
     public static ItemStack getSpeaker(String frequency)

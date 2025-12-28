@@ -3,6 +3,7 @@ package arnett.radio.Commands;
 import arnett.radio.Commands.CommandTree.Give.GiveFieldRadioCommand;
 import arnett.radio.Commands.CommandTree.Give.GiveSpeakerCommand;
 import arnett.radio.Commands.CommandTree.GiveBranch;
+import arnett.radio.Commands.CommandTree.Manage.Config.SaveConfigCommand;
 import arnett.radio.Commands.CommandTree.Manage.Config.SetConfigValueCommand;
 import arnett.radio.Commands.CommandTree.Manage.ConfigBranch;
 import arnett.radio.Commands.CommandTree.Manage.RefreshConnectionsCommand;
@@ -40,16 +41,26 @@ public class CommandManager implements CommandExecutor, TabCompleter {
             {
                 case "none" -> {
                     subCommands.add(new GiveBranch(new HashMap<>(Map.of(
+
                             new GiveFieldRadioCommand(), "none",
                             new GiveSpeakerCommand(), "voicechat"
+
                     ))));
                     subCommands.add(new MonitorBranch(new HashMap<>(Map.of(
+
                             new FrequencyDisplayCommand(), "voicechat"
+
                     ))));
                     subCommands.add(new ManageBranch(new HashMap<>(Map.of(
+
                             new RefreshConnectionsCommand(),"voicechat",
-                            new ConfigBranch(new HashMap<>(Map.of(new ReloadConfigCommand(), "none",
-                                    new SetConfigValueCommand(), "none"))), "none"
+
+                            new ConfigBranch
+                                    (new HashMap<>(Map.of(
+                                            new ReloadConfigCommand(), "none",
+                                            new SetConfigValueCommand(), "none",
+                                            new SaveConfigCommand(), "none")))
+                            , "none"
                     ))));
                 }
             }

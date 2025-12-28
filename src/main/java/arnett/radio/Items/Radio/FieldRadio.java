@@ -3,6 +3,7 @@ package arnett.radio.Items.Radio;
 import arnett.radio.RadioConfig;
 import arnett.radio.FrequencyManager;
 import arnett.radio.Radio;
+import com.destroystokyo.paper.MaterialTags;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.Consumable;
 import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
@@ -10,9 +11,12 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.DyeColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.*;
 import org.bukkit.persistence.PersistentDataType;
+import org.checkerframework.checker.units.qual.A;
+import org.checkerframework.checker.units.qual.N;
 
 import java.util.*;
 
@@ -21,6 +25,8 @@ public class FieldRadio {
 
     // shouldn't ever check the value of the key, only that the radio has it
     public static final NamespacedKey radioIdentifierKey = new NamespacedKey(Radio.singleton, "field_radio");
+    public static final NamespacedKey radioCraftKey = new NamespacedKey(Radio.singleton, "field_radio_craft");
+    public static final NamespacedKey radioRetuneKey = new NamespacedKey(Radio.singleton, "field_radio_retune");
 
     //namspace key in resource pack for custom model
     public static final NamespacedKey radioModelKey = new NamespacedKey("radio", "field_radio");
@@ -33,11 +39,47 @@ public class FieldRadio {
 
         // Plain Radio
         if(RadioConfig.fieldRadio_recipe_basic_enabled)
-            recipes.add(FrequencyManager.getFrequencyIndependentShapedRecipe(radioIdentifierKey, getRadio(),
+            recipes.add(FrequencyManager.getFrequencyIndependentShapedRecipe(radioCraftKey, getRadio(),
                 RadioConfig.fieldRadio_recipe_basic_shape, RadioConfig.fieldRadio_recipe_basic_ingredients));
+
+        //retuning
+        if(RadioConfig.fieldRadio_recipe_retune_enabled)
+        {
+            ShapelessRecipe recipe = new ShapelessRecipe(radioRetuneKey, getRadio());
+
+            List<String> ingredients = RadioConfig.fieldRadio_recipe_retune_ingredients;
+
+            ingredients.forEach(i -> {
+                //special case RADIO
+                if(i.equals("RADIO"))
+                    recipe.addIngredient(RadioMaterial);
+
+                //special case DYE for frequency
+                else if (i.equals("DYE"))
+                    recipe.addIngredient(new RecipeChoice.MaterialChoice(MaterialTags.DYES));
+
+                else {
+                    try {
+                        recipe.addIngredient(Material.matchMaterial(i));
+                    }
+                    catch (Exception e)
+                    {
+                        Radio.logger.warning("Invalid material provided for Radio retune recipe: " + i);
+                    }
+                }
+            });
+
+            recipes.add(recipe);
+        }
 
         return  recipes;
     }
+
+    public static NamespacedKey[] getRecipekeys()
+    {
+        return new NamespacedKey[]{radioCraftKey, radioRetuneKey};
+    }
+
 
     public static ItemStack getRadio()
     {

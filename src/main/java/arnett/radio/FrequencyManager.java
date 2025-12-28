@@ -42,14 +42,13 @@ public class FrequencyManager {
         int i = 0;
         //sets up 2 way map for quick frequency color refrence
         for (String key : RadioConfig.frequencyRepresentationDyes.getKeys(false)) {
-            Radio.logger.info(key);
-            Radio.logger.info(RadioConfig.frequencyRepresentationDyes.getString(key));
             dyeMap.put(key, RadioConfig.frequencyRepresentationDyes.getString(key));
             numberedDyes.put(key, i);
             i++;
         }
     }
 
+    //used for shaped recipes
     public static ItemStack addFrequencyToCraft(ItemStack result, ItemStack[] mtx, List<String> shape)
     {
         //get position of dyes
@@ -94,7 +93,45 @@ public class FrequencyManager {
             }
         }
 
-        //chop off last bit (the / or .)
+        //chop off last bit
+        frequency.setLength(frequency.length() - RadioConfig.frequencySplitString.length());
+        displayFrequency.setLength(displayFrequency.length() - RadioConfig.frequencySplitString.length());
+
+        tagFrequency(result, frequency.toString());
+
+        result.lore(List.of(Component.text(displayFrequency.toString())));
+
+        return result;
+    }
+
+    //used for shapeless recipes
+    public static ItemStack addFrequencyToCraft(ItemStack result, ItemStack[] mtx)
+    {
+        //String builders since they're literally built for this
+        StringBuilder frequency = new StringBuilder();
+        StringBuilder displayFrequency = new StringBuilder();
+
+        //check matrix for dyes
+        for(ItemStack item : mtx)
+        {
+            if(item == null)
+                continue;
+
+            //if this item is a dye
+            if(MaterialTags.DYES.isTagged(item))
+            {
+                //gets dye name
+                String dyeName = item.getType().name().substring(0, item.getType().name().length()-4);
+
+                //add to tags
+                frequency.append(dyeName);
+                frequency.append(RadioConfig.frequencySplitString);
+                displayFrequency.append(RadioConfig.frequencyRepresentationDyes.getString(dyeName));
+                displayFrequency.append(RadioConfig.frequencySplitString);
+            }
+        }
+
+        //chop off last bit
         frequency.setLength(frequency.length() - RadioConfig.frequencySplitString.length());
         displayFrequency.setLength(displayFrequency.length() - RadioConfig.frequencySplitString.length());
 

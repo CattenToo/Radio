@@ -1,10 +1,12 @@
 package arnett.radio.Items.Speaker;
 
 import arnett.radio.FrequencyManager;
+import arnett.radio.Items.Radio.FieldRadio;
 import arnett.radio.Radio;
 import arnett.radio.RadioConfig;
 import com.destroystokyo.paper.event.block.BlockDestroyEvent;
 import io.papermc.paper.event.block.BlockBreakBlockEvent;
+import org.bukkit.Keyed;
 import org.bukkit.Location;
 import org.bukkit.block.Crafter;
 import org.bukkit.event.EventHandler;
@@ -180,7 +182,7 @@ public class SpeakerListener implements Listener {
 
 
     //item drops
-
+    //todo Water placed on directly breaks without drop, player breaks doesn't register frequency, break detections that are working don't add correct frequencies
 
 
     @EventHandler
@@ -191,7 +193,7 @@ public class SpeakerListener implements Listener {
 
         //tag the drop
         e.getItems().forEach(item -> {
-            FrequencyManager.tagFrequency(item.getItemStack(), Speaker.getFrequencyOfSpeakerBlock(e.getBlock()));
+            item.setItemStack(FrequencyManager.tagFrequency(item.getItemStack(), Speaker.getFrequencyOfSpeakerBlock(e.getBlock())));
         });
     }
 
@@ -221,7 +223,6 @@ public class SpeakerListener implements Listener {
         if(!e.getChunk().getPersistentDataContainer().has(Speaker.speakerIdentifierKey))
             return;
 
-        Radio.logger.info("Found Tagged Chunk on LOAD");
 
         //tag is present
         List<int[]> speakers = e.getChunk().getPersistentDataContainer().get(Speaker.speakerIdentifierKey, PersistentDataType.LIST.integerArrays());
@@ -233,11 +234,9 @@ public class SpeakerListener implements Listener {
             return;
         }
 
-        Radio.logger.info("Found Speaker Data");
 
         for(int[] tag : speakers)
         {
-            Radio.logger.info("checking tags");
 
             // btw tag is stored as the first three numbers being the location
             // and everything else being the numerical representation of the frequency
@@ -246,12 +245,10 @@ public class SpeakerListener implements Listener {
             if(tag == null || tag.length < 3)
                 return;
 
-            Radio.logger.info(e.getChunk().getBlock(tag[0] & 15, tag[1], tag[2] & 15).getType().name());
             //check location of the tag to see if there is a speaker there
             // the (# & 15) part is mostly equivalent to (# % 16) but faster since it's a bit mask
             if(Speaker.isBlockSpeaker(e.getChunk().getBlock(tag[0] & 15, tag[1], tag[2] & 15)))
             {
-                Radio.logger.info("found");
                 //get the frequency
                 String frequency = FrequencyManager.convertIntToFrequency(tag, 3);
 
@@ -269,7 +266,6 @@ public class SpeakerListener implements Listener {
         if(!e.getChunk().getPersistentDataContainer().has(Speaker.speakerIdentifierKey))
             return;
 
-        Radio.logger.info("Found Tagged Chunk on UNLOAD");
 
         if(!e.getChunk().getPersistentDataContainer().has(Speaker.speakerIdentifierKey))
             return;
@@ -284,11 +280,9 @@ public class SpeakerListener implements Listener {
             return;
         }
 
-        Radio.logger.info("Found Speaker Data");
 
         for(int[] tag : speakers)
         {
-            Radio.logger.info("checking tags");
 
             //make sure it exists and isn't too small
             if(tag == null || tag.length < 3)
@@ -313,8 +307,24 @@ public class SpeakerListener implements Listener {
         //returns what is put in the crafting interface
         ItemStack[] mtx = ((Crafter)e.getBlock().getState()).getInventory().getContents();
 
-        //update result (tbh not sure if this is necessary)
-        e.setResult(FrequencyManager.addFrequencyToCraft(result, mtx, RadioConfig.speaker_recipe_basic_shape));
+        //basic craft
+        if(e.getRecipe().getKey().equals(Speaker.speakerCraftKey))
+        {
+            //update result (tbh not sure if this is necessary)
+            e.setResult(FrequencyManager.addFrequencyToCraft(result, mtx, RadioConfig.speaker_recipe_basic_shape));
+        }
+
+        //retuning
+        else if(e.getRecipe().getKey().equals(Speaker.speakerRetuneKey))
+        {
+            //update result (tbh not sure if this is necessary)
+            e.setResult(FrequencyManager.addFrequencyToCraft(result, mtx));
+        }
+
+        //Rut-roh!
+        else {
+            Radio.logger.warning("COULD NOT FIND FIELD-RADIO CRAFTER RECIPE");
+        }
     }
 
     @EventHandler
@@ -328,13 +338,30 @@ public class SpeakerListener implements Listener {
             //not radio recipe so skip
             return;
 
+        if(!(e.getRecipe() instanceof Keyed keyedRecipe))
+            return;
+
         ItemStack result = e.getInventory().getResult();
 
         //returns what is put in the crafting interface
         ItemStack[] mtx = e.getInventory().getMatrix();
 
-        //update result (tbh not sure if this is necessary)
-        e.getInventory().setResult(FrequencyManager.addFrequencyToCraft(result, mtx, RadioConfig.speaker_recipe_basic_shape));
+        if(keyedRecipe.getKey().equals(Speaker.speakerCraftKey))
+        {
+            //update result
+            e.getInventory().setResult(FrequencyManager.addFrequencyToCraft(result, mtx, RadioConfig.fieldRadio_recipe_basic_shape));
+        }
+
+        else if(keyedRecipe.getKey().equals(Speaker.speakerRetuneKey))
+        {
+            //update result
+            e.getInventory().setResult(FrequencyManager.addFrequencyToCraft(result, mtx));
+        }
+
+        //Rut-roh!
+        else {
+            Radio.logger.warning("COULD NOT FIND SPEAKER CRAFT RECIPE");
+        }
     }
 
 }

@@ -2,6 +2,8 @@ package arnett.radio.Commands.CommandTree.Manage.Config;
 
 import arnett.radio.Commands.SubCommand;
 import arnett.radio.Radio;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.entity.Player;
 
 import java.util.List;
@@ -14,6 +16,8 @@ public class ReloadConfigCommand implements SubCommand {
         SubCommand.super.execute(player, args, level);
 
         Radio.singleton.reloadConfig();
+
+        player.sendMessage(Component.text("Reloaded").decorate(TextDecoration.BOLD));
         return true;
     }
 
