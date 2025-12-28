@@ -2,19 +2,26 @@ package arnett.radio.Items.Speaker;
 
 import arnett.radio.FrequencyManager;
 import arnett.radio.Items.Radio.FieldRadio;
+import arnett.radio.Items.Radio.FieldRadioVoiceChat;
+import arnett.radio.Radio;
 import arnett.radio.RadioConfig;
+import com.destroystokyo.paper.event.block.BlockDestroyEvent;
+import io.papermc.paper.event.block.BlockBreakBlockEvent;
+import org.bukkit.Bukkit;
+import org.bukkit.Keyed;
 import org.bukkit.Location;
 import org.bukkit.block.Crafter;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.event.block.CrafterCraftEvent;
+import org.bukkit.event.block.*;
+import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.event.entity.ItemSpawnEvent;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
+import org.bukkit.event.world.ChunkLoadEvent;
+import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class SpeakerListener implements Listener {
@@ -26,12 +33,10 @@ public class SpeakerListener implements Listener {
             return;
 
         //is the block the specified head type
-        if(!e.getBlock().getType().equals(RadioConfig.speaker_block_headType))
+        if(!Speaker.isBlockSpeaker(e.getBlock()))
             return;
 
-        String frequency = e.getItemInHand().getPersistentDataContainer().getOrDefault(
-                FrequencyManager.radioFrequencyKey, PersistentDataType.STRING, ""
-        );
+        String frequency = FrequencyManager.getFrequency(e.getItemInHand());
 
         //check if this has been tagged with a frequency, if not it's probably just a regular head
         if(frequency.isEmpty())
@@ -40,32 +45,286 @@ public class SpeakerListener implements Listener {
         //speaker has been placed
         Location blockLocation = e.getBlock().getLocation();
 
-        //tag the chunk
-        {
-            PersistentDataContainer chunkPdc = e.getBlock().getChunk().getPersistentDataContainer();
-
-            //add to the list
-            List<int[]> locations = chunkPdc.get(Speaker.speakerIdentifierKey, PersistentDataType.LIST.integerArrays());
-
-            //if it is not yet tagged
-            if(locations == null)
-                locations = List.of();
-
-
-            locations.add(new int[]{
-                    blockLocation.getBlockX(),
-                    blockLocation.getBlockY(),
-                    blockLocation.getBlockZ()
-            });
-
-            //tag the chunk or update the tag
-            chunkPdc.set(Speaker.speakerIdentifierKey, PersistentDataType.LIST.integerArrays(), locations);
-        }
+        //tag the chunk (to easily find later)
+        Speaker.tagChunkOfSpeaker(e.getBlock().getChunk(), blockLocation, frequency);
 
         //add it to the list
         Speaker.addActiveSpeaker(blockLocation, frequency);
     }
 
+    //breakage events
+    @EventHandler
+    public void onBlockBreak(BlockBreakEvent e)
+    {
+        // this is whenever a PLAYER breaks a block
+
+        //are we even using blocks for this project
+        if(RadioConfig.speaker_useEntity)
+            return;
+
+        //Was it a Speaker block destroyed
+        if(!Speaker.isBlockSpeaker(e.getBlock()))
+            return;
+
+        //wait one tick to untag it because of item drops
+        Bukkit.getScheduler().scheduleSyncDelayedTask(Radio.singleton, () -> {
+            //untag the chunk
+            Speaker.untagChunkOfSpeaker(e.getBlock().getChunk(), e.getBlock().getLocation());
+
+            //Speaker block was destroyed
+            Speaker.removeActiveSpeaker(e.getBlock().getLocation());
+        }, 1);
+    }
+
+    @EventHandler
+    public void onEntityExplode(EntityExplodeEvent e)
+    {
+        // this is whenever an ENTITY breaks a block through an EXPLOSION
+
+        //are we even using blocks for this project
+        if(RadioConfig.speaker_useEntity)
+            return;
+
+        e.blockList().forEach((block) -> {
+            //Was it a Speaker block destroyed
+            if(!Speaker.isBlockSpeaker(block))
+                return;
+
+            //wait one tick to untag it because of item drops
+            Bukkit.getScheduler().scheduleSyncDelayedTask(Radio.singleton, () -> {
+                //untag the chunk
+                Speaker.untagChunkOfSpeaker(block.getChunk(), block.getLocation());
+
+                //Speaker block was destroyed
+                Speaker.removeActiveSpeaker(block.getLocation());
+            }, 1);
+        });
+    }
+
+    @EventHandler
+    public void onBlockExplode(BlockExplodeEvent e)
+    {
+        // this is whenever a BLOCK breaks another block through an EXPLOSION
+        // (i.e. beds in nether/end because for some reason that's separate)
+
+        //are we even using blocks for this project
+        if(RadioConfig.speaker_useEntity)
+            return;
+
+        e.blockList().forEach((block) -> {
+            //Was it a Speaker block destroyed
+            if(!Speaker.isBlockSpeaker(block))
+                return;
+
+            //wait one tick to untag it because of item drops
+            Bukkit.getScheduler().scheduleSyncDelayedTask(Radio.singleton, () -> {
+                //untag the chunk
+                Speaker.untagChunkOfSpeaker(block.getChunk(), block.getLocation());
+
+                //Speaker block was destroyed
+                Speaker.removeActiveSpeaker(block.getLocation());
+            }, 1);
+        });
+
+
+    }
+
+    @EventHandler
+    public void onBlockDestroyed(BlockDestroyEvent e)
+    {
+        // tbh idk when this gets called, but it maybe does sometimes so might as well handle it.
+
+        //are we even using blocks for this project
+        if(RadioConfig.speaker_useEntity)
+            return;
+
+        //Was it a Speaker block destroyed
+        if(!Speaker.isBlockSpeaker(e.getBlock()))
+            return;
+
+        //wait one tick to untag it because of item drops
+        Bukkit.getScheduler().scheduleSyncDelayedTask(Radio.singleton, () -> {
+            //untag the chunk
+            Speaker.untagChunkOfSpeaker(e.getBlock().getChunk(), e.getBlock().getLocation());
+
+            //Speaker block was destroyed
+            Speaker.removeActiveSpeaker(e.getBlock().getLocation());
+        }, 1);
+
+        e.setWillDrop(false);
+        //spawn it ourselves
+
+        e.getBlock().getLocation().getWorld().dropItemNaturally(e.getBlock().getLocation(), Speaker.getSpeaker(Speaker.getFrequencyOfSpeakerBlock(e.getBlock().getLocation())));
+    }
+
+    @EventHandler
+    public void onPistonExtend(BlockPistonExtendEvent e)
+    {
+        //piston extends obviously
+
+        e.getBlocks().forEach(block -> {
+            //Was it a Speaker block destroyed
+            if(!Speaker.isBlockSpeaker(block))
+                return;
+
+            //wait one tick to untag it because of item drops
+            Bukkit.getScheduler().scheduleSyncDelayedTask(Radio.singleton, () -> {
+                //untag the chunk
+                Speaker.untagChunkOfSpeaker(block.getChunk(), block.getLocation());
+
+                //Speaker block was destroyed
+                Speaker.removeActiveSpeaker(block.getLocation());
+            }, 1);
+        });
+    }
+
+    @EventHandler
+    public void onBlockReplace(BlockFromToEvent e)
+    {
+        //block is replaced by another, like when water breaks redstone
+
+        //are we even using blocks for this project
+        if(RadioConfig.speaker_useEntity)
+            return;
+
+        //Was it a Speaker block destroyed
+        if(!Speaker.isBlockSpeaker(e.getToBlock()))
+            return;
+
+        //wait one tick to untag it because of item drops
+        Bukkit.getScheduler().scheduleSyncDelayedTask(Radio.singleton, () -> {
+            //untag the chunk
+            Speaker.untagChunkOfSpeaker(e.getBlock().getChunk(), e.getBlock().getLocation());
+
+            //Speaker block was destroyed
+            Speaker.removeActiveSpeaker(e.getBlock().getLocation());
+        }, 1);
+    }
+
+
+
+
+    //item drops
+    //todo Water placed on directly breaks without drop, player breaks doesn't register frequency, break detections that are working don't add correct frequencies
+
+
+    @EventHandler
+    public void onPlayerBreakBlock(BlockDropItemEvent e)
+    {
+        Radio.logger.info("Block Broken: " + e.getBlockState().getType().name());
+
+        //get block state used for broken block
+        if(!Speaker.isBlockSpeaker(e.getBlockState().getType()))
+            return;
+
+        Radio.logger.info("Speaker Broken FQ: " + Speaker.getFrequencyOfSpeakerBlock(e.getBlockState().getBlock()));
+
+        //tag the drop
+        e.getItems().forEach(item -> {
+            item.setItemStack(FrequencyManager.tagFrequency(item.getItemStack(), Speaker.getFrequencyOfSpeakerBlock(e.getBlockState().getLocation())));
+        });
+    }
+
+
+    @EventHandler
+    public void onBlockBreakBlock(BlockBreakBlockEvent e)
+    {
+        if(!Speaker.isBlockSpeaker(e.getBlock()))
+            return;
+
+        Radio.logger.info("Replaced Speaker: " + Speaker.getFrequencyOfSpeakerBlock(e.getBlock()));
+
+        //tag the drop
+        e.getDrops().forEach(item -> {
+            FrequencyManager.tagFrequency(item, Speaker.getFrequencyOfSpeakerBlock(e.getBlock()));
+        });
+    }
+
+
+    //chunk loading
+
+
+
+
+    //chunk loading and deloading check
+    @EventHandler
+    public void onChunkLoad(ChunkLoadEvent e)
+    {
+        if(!e.getChunk().getPersistentDataContainer().has(Speaker.speakerIdentifierKey))
+            return;
+
+
+        //tag is present
+        List<int[]> speakers = e.getChunk().getPersistentDataContainer().get(Speaker.speakerIdentifierKey, PersistentDataType.LIST.integerArrays());
+
+        if(speakers == null || speakers.isEmpty())
+        {
+            //some error happened in storage, anyway, there's no speakers so remove it
+            e.getChunk().getPersistentDataContainer().remove(Speaker.speakerIdentifierKey);
+            return;
+        }
+
+
+        for(int[] tag : speakers)
+        {
+
+            // btw tag is stored as the first three numbers being the location
+            // and everything else being the numerical representation of the frequency
+
+            //make sure it exists and isn't too small
+            if(tag == null || tag.length < 3)
+                return;
+
+            //check location of the tag to see if there is a speaker there
+            // the (# & 15) part is mostly equivalent to (# % 16) but faster since it's a bit mask
+            if(Speaker.isBlockSpeaker(e.getChunk().getBlock(tag[0] & 15, tag[1], tag[2] & 15)))
+            {
+                //get the frequency
+                String frequency = FrequencyManager.convertIntToFrequency(tag, 3);
+
+                //add it to the list
+                Speaker.addActiveSpeaker(new Location(e.getWorld(), tag[0], tag[1], tag[2]), frequency);
+            }
+        }
+    }
+
+    //todo this one was last second addition, needs double checking later
+    //chunk loading and deloading check
+    @EventHandler
+    public void onChunkUnload(ChunkUnloadEvent e)
+    {
+        if(!e.getChunk().getPersistentDataContainer().has(Speaker.speakerIdentifierKey))
+            return;
+
+
+        if(!e.getChunk().getPersistentDataContainer().has(Speaker.speakerIdentifierKey))
+            return;
+
+        //tag is present
+        List<int[]> speakers = e.getChunk().getPersistentDataContainer().get(Speaker.speakerIdentifierKey, PersistentDataType.LIST.integerArrays());
+
+        if(speakers == null || speakers.isEmpty())
+        {
+            //some error happened in storage, anyway, there's no speakers so remove it
+            e.getChunk().getPersistentDataContainer().remove(Speaker.speakerIdentifierKey);
+            return;
+        }
+
+
+        for(int[] tag : speakers)
+        {
+
+            //make sure it exists and isn't too small
+            if(tag == null || tag.length < 3)
+                return;
+
+            // just remove it, don't need to check if it's the right block since
+            // if nothing is present in the active list nothing will happen anyway
+            Speaker.removeActiveSpeaker(new Location(e.getWorld(), tag[0], tag[1], tag[2]));
+        }
+    }
+
+    //todo test
     @EventHandler
     public void onItemCraftered(CrafterCraftEvent e)
     {
@@ -78,8 +337,24 @@ public class SpeakerListener implements Listener {
         //returns what is put in the crafting interface
         ItemStack[] mtx = ((Crafter)e.getBlock().getState()).getInventory().getContents();
 
-        //update result (tbh not sure if this is necessary)
-        e.setResult(FrequencyManager.addFrequencyToCraft(result, mtx, RadioConfig.speaker_recipe_basic_shape));
+        //basic craft
+        if(e.getRecipe().getKey().equals(Speaker.speakerCraftKey))
+        {
+            //update result (tbh not sure if this is necessary)
+            e.setResult(FrequencyManager.addFrequencyToCraft(result, mtx, RadioConfig.speaker_recipe_basic_shape));
+        }
+
+        //retuning
+        else if(e.getRecipe().getKey().equals(Speaker.speakerRetuneKey))
+        {
+            //update result (tbh not sure if this is necessary)
+            e.setResult(FrequencyManager.addFrequencyToCraft(result, mtx));
+        }
+
+        //Rut-roh!
+        else {
+            Radio.logger.warning("COULD NOT FIND FIELD-RADIO CRAFTER RECIPE");
+        }
     }
 
     @EventHandler
@@ -93,12 +368,30 @@ public class SpeakerListener implements Listener {
             //not radio recipe so skip
             return;
 
+        if(!(e.getRecipe() instanceof Keyed keyedRecipe))
+            return;
+
         ItemStack result = e.getInventory().getResult();
 
         //returns what is put in the crafting interface
         ItemStack[] mtx = e.getInventory().getMatrix();
 
-        //update result (tbh not sure if this is necessary)
-        e.getInventory().setResult(FrequencyManager.addFrequencyToCraft(result, mtx, RadioConfig.speaker_recipe_basic_shape));
+        if(keyedRecipe.getKey().equals(Speaker.speakerCraftKey))
+        {
+            //update result
+            e.getInventory().setResult(FrequencyManager.addFrequencyToCraft(result, mtx, RadioConfig.fieldRadio_recipe_basic_shape));
+        }
+
+        else if(keyedRecipe.getKey().equals(Speaker.speakerRetuneKey))
+        {
+            //update result
+            e.getInventory().setResult(FrequencyManager.addFrequencyToCraft(result, mtx));
+        }
+
+        //Rut-roh!
+        else {
+            Radio.logger.warning("COULD NOT FIND SPEAKER CRAFT RECIPE");
+        }
     }
+
 }

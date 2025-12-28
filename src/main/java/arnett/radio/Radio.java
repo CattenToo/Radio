@@ -2,6 +2,7 @@ package arnett.radio;
 
 import arnett.radio.Commands.CommandManager;
 import arnett.radio.Items.CustomItemManager;
+import arnett.radio.Items.Radio.FieldRadioVoiceChatListener;
 import de.maxhenkel.voicechat.api.BukkitVoicechatService;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -30,14 +31,12 @@ public final class Radio extends JavaPlugin {
         //Config is a custom class for ease of use which inherits from class of getConfig()
         config = getConfig();
 
-
         FrequencyManager.reload();
 
         if(!RadioConfig.enabled)
         {
             return;
         }
-
 
         for (Plugin plugin : Bukkit.getPluginManager().getPlugins()) {
             // This prints the exact name needed for your plugin.yml
@@ -50,8 +49,7 @@ public final class Radio extends JavaPlugin {
         // registers listeners
         CustomItemManager.registerItemEvents(this);
 
-        //registers recipes
-        CustomItemManager.registerRecipies();
+        //registers recipes on reload config btw
 
         //register commands
         getCommand("fieldradio").setExecutor(new CommandManager(avaliablePlugins));
@@ -78,6 +76,7 @@ public final class Radio extends JavaPlugin {
         getLogger().info("Using Simple Voice Chat");
         //register events specific to voice chat
         CustomItemManager.registerVoiceChatItemEvents(this);
+        getServer().getPluginManager().registerEvents(new RadioVoiceChatListener(), this);
     }
 
     @Override
@@ -90,6 +89,10 @@ public final class Radio extends JavaPlugin {
 
         if(logger != null)
             FrequencyManager.reload();
+
+        CustomItemManager.reload();
+
+        logger.info("Reloaded Config");
     }
 
 }

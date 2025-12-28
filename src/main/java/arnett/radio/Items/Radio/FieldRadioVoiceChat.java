@@ -1,5 +1,6 @@
 package arnett.radio.Items.Radio;
 
+import arnett.radio.FrequencyManager;
 import arnett.radio.RadioConfig;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -105,11 +106,6 @@ public class FieldRadioVoiceChat {
         return isOnFrequency(frequency, target);
     }
 
-    public static Map<String, ArrayList<UUID>> getFrequencys()
-    {
-        return Collections.unmodifiableMap(frequencyListeners);
-    }
-
     public static void removeFromGrace(UUID id)
     {
         playersInGracePeroid.remove(id);
@@ -122,7 +118,7 @@ public class FieldRadioVoiceChat {
         ItemStack[] radios = FieldRadio.getRadiosFromPlayer(target);
 
         for(ItemStack radio : radios)
-            addToFrequency(FieldRadio.getFrequency(radio), target.getUniqueId());
+            addToFrequency(FrequencyManager.getFrequency(radio), target.getUniqueId());
     }
 
     public static void refresh(String frequency, Player target){
@@ -132,8 +128,8 @@ public class FieldRadioVoiceChat {
         ItemStack[] radios = FieldRadio.getRadiosFromPlayer(target);
 
         for(ItemStack radio : radios)
-            if(FieldRadio.getFrequency(radio).equalsIgnoreCase(frequency))
-                addToFrequency(FieldRadio.getFrequency(radio), target.getUniqueId());
+            if(FrequencyManager.getFrequency(radio).equalsIgnoreCase(frequency))
+                addToFrequency(FrequencyManager.getFrequency(radio), target.getUniqueId());
     }
 
     public static short[] applyFilter(short[] decodedData)
@@ -146,14 +142,19 @@ public class FieldRadioVoiceChat {
 
         // Configuration constants
         double LP_ALPHA = RadioConfig.fieldRadio_audioFilter_LPAlpha; // Lower = more muffled
+        double Volume = RadioConfig.fieldRadio_audioFilter_volume; // Lower = more muffled
         double HP_ALPHA = RadioConfig.fieldRadio_audioFilter_HPAlpha; // Higher = less bass
         int NOISE_FLOOR = RadioConfig.fieldRadio_audioFilter_noiseFloor;  // Constant hiss volume
         int CRACKLE_CHANCE = RadioConfig.fieldRadio_audioFilter_crackleChance; // 1 in 2000 samples
 
         // no, I did not actually code the audio manipulation part of the filter since I'm not the best at working with audio
+        //actually, I did the volume part myself, ya know, the easiest part; i'm so good
 
         for (int i = 0; i < decodedData.length; i++) {
-            double currentSample = decodedData   [i];
+            double currentSample = decodedData[i];
+
+            //Volume multiplier
+            decodedData[i] *= Volume;
 
             // 1. BANDPASS FILTER (EQ)
             // Low Pass (Cuts highs)

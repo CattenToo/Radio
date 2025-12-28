@@ -10,9 +10,7 @@ import arnett.radio.Items.Radio.FieldRadioListener;
 import arnett.radio.Items.Radio.FieldRadioVoiceChatListener;
 import arnett.radio.RadioVoiceChat;
 import net.kyori.adventure.text.format.TextColor;
-import org.bukkit.Bukkit;
-import org.bukkit.Color;
-import org.bukkit.DyeColor;
+import org.bukkit.*;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -40,11 +38,23 @@ public class CustomItemManager {
     {
         //radio
         for(Recipe r : FieldRadio.getRecipes())
+        {
+            if(r instanceof Keyed keyedRecipe)
+                Radio.logger.info("Added Recipe: " + keyedRecipe.getKey());
+            else
+                Radio.logger.info("Added Recipe for field radio" );
             Bukkit.addRecipe(r);
+        }
 
         //speaker
         for(Recipe r : Speaker.getRecipes())
+        {
+            if(r instanceof Keyed keyedRecipe)
+                Radio.logger.info("Added Recipe: " + keyedRecipe.getKey());
+            else
+                Radio.logger.info("Added Recipe for speaker" );
             Bukkit.addRecipe(r);
+        }
     }
 
     //returns recipe without choice items
@@ -96,5 +106,25 @@ public class CustomItemManager {
     public static Color getDulledFrequencyColor(String subFrequency)
     {
         return getFrequencyColor(subFrequency).mixColors(Color.WHITE);
+    }
+
+    public static void reload() {
+        //refresh recipes
+        //field radio
+        for(NamespacedKey r : FieldRadio.getRecipekeys())
+        {
+            Radio.logger.info("Removed Recipe: " + r.getKey());
+            Bukkit.removeRecipe(r);
+        }
+
+        //speaker
+        for(NamespacedKey r : Speaker.getRecipekeys())
+        {
+            Radio.logger.info("Removed Recipe: " + r.getKey());
+            Bukkit.removeRecipe(r);
+        }
+
+        //re add them
+        registerRecipies();
     }
 }

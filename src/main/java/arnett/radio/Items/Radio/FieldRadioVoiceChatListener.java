@@ -1,5 +1,6 @@
 package arnett.radio.Items.Radio;
 
+import arnett.radio.FrequencyManager;
 import arnett.radio.Items.Speaker.Speaker;
 import arnett.radio.Radio;
 import arnett.radio.RadioConfig;
@@ -41,7 +42,7 @@ public class FieldRadioVoiceChatListener implements Listener {
                 // so screw it, one tick later we'll just refresh the player
                 // ONLY IF they already are connected to the frequency
 
-                String frequency = FieldRadio.getFrequency(e.getNewItemStack());
+                String frequency = FrequencyManager.getFrequency(e.getNewItemStack());
 
                 if(FieldRadioVoiceChat.isOnFrequency(frequency, e.getPlayer()))
                     Bukkit.getScheduler().scheduleSyncDelayedTask(Radio.singleton, () -> {
@@ -49,20 +50,20 @@ public class FieldRadioVoiceChatListener implements Listener {
                     }, 1);
             }
 
-            Radio.logger.info("Picked Up Radio <" + FieldRadio.getFrequency(e.getNewItemStack()) + "> by " + e.getPlayer().getName());
+            Radio.logger.info("Picked Up Radio <" + FrequencyManager.getFrequency(e.getNewItemStack()) + "> by " + e.getPlayer().getName());
 
             //radio added to inventory
             //set player to listen to frequency
-            FieldRadioVoiceChat.addToFrequency(FieldRadio.getFrequency(e.getNewItemStack()), e.getPlayer().getUniqueId());
+            FieldRadioVoiceChat.addToFrequency(FrequencyManager.getFrequency(e.getNewItemStack()), e.getPlayer().getUniqueId());
         }
         if(FieldRadio.isRadio(e.getOldItemStack()))
         {
 
-            Radio.logger.info("Removed Radio <" + FieldRadio.getFrequency(e.getOldItemStack()) + "> by " + e.getPlayer().getName());
+            Radio.logger.info("Removed Radio <" + FrequencyManager.getFrequency(e.getOldItemStack()) + "> by " + e.getPlayer().getName());
 
             //radio removed from inventory
             //remove player from listen to frequency
-            FieldRadioVoiceChat.removeFromFrequency(FieldRadio.getFrequency(e.getOldItemStack()), e.getPlayer().getUniqueId());
+            FieldRadioVoiceChat.removeFromFrequency(FrequencyManager.getFrequency(e.getOldItemStack()), e.getPlayer().getUniqueId());
         }
     }
 
@@ -119,7 +120,7 @@ public class FieldRadioVoiceChatListener implements Listener {
         }
 
 
-        String frequency = FieldRadio.getFrequency(FieldRadio.getHeldRadio(player).get());
+        String frequency = FrequencyManager.getFrequency(FieldRadio.getHeldRadio(player).get());
 
         //gets voice chat api for connections
         VoicechatServerApi serverVC = e.getVoicechat();
@@ -155,7 +156,7 @@ public class FieldRadioVoiceChatListener implements Listener {
             if(RadioConfig.fieldRadio_audioFilter_enabled)
             {
                 //modify packet
-                audioData = RadioVoiceChat.encoder.encode(FieldRadioVoiceChat.applyFilter(RadioVoiceChat.decoder.decode(audioData)));
+                audioData = RadioVoiceChat.getEncoder(player.getUniqueId()).encode(FieldRadioVoiceChat.applyFilter(RadioVoiceChat.getDecoder(player.getUniqueId()).decode(audioData)));
             }
 
             //send audio
