@@ -218,8 +218,10 @@ public class FrequencyManager {
         {
             String disp = FrequencyManager.dyeMap.get(str);
 
-            if(disp == null)
+            if(disp == null) {
                 displayFrequency.append(str).append(RadioConfig.frequencySplitString);
+                continue;
+            }
 
             displayFrequency.append(disp).append(RadioConfig.frequencySplitString);
         }

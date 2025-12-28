@@ -10,6 +10,7 @@ import arnett.radio.Commands.CommandTree.Manage.RefreshConnectionsCommand;
 import arnett.radio.Commands.CommandTree.Manage.Config.ReloadConfigCommand;
 import arnett.radio.Commands.CommandTree.ManageBranch;
 import arnett.radio.Commands.CommandTree.Monitor.FrequencyDisplayCommand;
+import arnett.radio.Commands.CommandTree.Monitor.ListActiveCodersCommand;
 import arnett.radio.Commands.CommandTree.MonitorBranch;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
@@ -48,7 +49,8 @@ public class CommandManager implements CommandExecutor, TabCompleter {
                     ))));
                     subCommands.add(new MonitorBranch(new HashMap<>(Map.of(
 
-                            new FrequencyDisplayCommand(), "voicechat"
+                            new FrequencyDisplayCommand(), "voicechat",
+                            new ListActiveCodersCommand(), "voicechat"
 
                     ))));
                     subCommands.add(new ManageBranch(new HashMap<>(Map.of(

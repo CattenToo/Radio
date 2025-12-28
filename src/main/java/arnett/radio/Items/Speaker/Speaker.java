@@ -16,6 +16,7 @@ import io.papermc.paper.datacomponent.DataComponentTypes;
 import net.kyori.adventure.text.Component;
 import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.inventory.*;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -133,6 +134,8 @@ public class Speaker {
             pdc.set(speakerIdentifierKey, PersistentDataType.STRING, "speaker");
         });
 
+        speaker.setData(DataComponentTypes.ITEM_NAME, Component.text("Speaker"));
+
         return speaker;
     }
 
@@ -201,10 +204,12 @@ public class Speaker {
 
     public static void sendMicrophonePacketToFrequency(MicrophonePacketEvent e, String frequency)
     {
+        short[] decodedAudio = applyFilter(RadioVoiceChat.getDecoder(e.getSenderConnection().getPlayer().getUuid()).decode(e.getPacket().getOpusEncodedData()));
+
         //search active speakers for ones connected to frequency
         activeSpeakers.getOrDefault(frequency, new HashMap<>()).forEach((world, channelList)->{
             channelList.forEach((channel)->{
-                channel.send(e.getPacket());
+                channel.send(RadioVoiceChat.getEncoder(e.getSenderConnection().getPlayer().getUuid()).encode(decodedAudio));
             });
         });
     }
@@ -290,9 +295,9 @@ public class Speaker {
 
         for (int[] arr : speakers)
         {
-            if(arr[0] == (block.getLocation().blockX() & 15) &&
+            if(arr[0] == (block.getLocation().blockX()) &&
                 arr[1] == (block.getLocation().blockY()) &&
-                arr[2] == (block.getLocation().blockZ() & 15)) {
+                arr[2] == (block.getLocation().blockZ())) {
 
                 return FrequencyManager.convertIntToFrequency(arr, 3);
             }
@@ -303,8 +308,90 @@ public class Speaker {
         return "none";
     }
 
+    public static String getFrequencyOfSpeakerBlock(Location location)
+    {
+        if(!location.getChunk().getPersistentDataContainer().has(speakerIdentifierKey))
+            return "none";
+
+        List<int[]> speakers = location.getChunk().getPersistentDataContainer().get(speakerIdentifierKey, PersistentDataType.LIST.integerArrays());
+
+        for (int[] arr : speakers)
+        {
+            if(arr[0] == (location.blockX()) &&
+                    arr[1] == (location.blockY()) &&
+                    arr[2] == (location.blockZ())) {
+
+                return FrequencyManager.convertIntToFrequency(arr, 3);
+            }
+        }
+
+        //shouldn't reach this
+        Radio.logger.warning("No Freqeucny found when scanning for Speaker");
+        return "none";
+    }
+
+
+    public static short[] applyFilter(short[] decodedData)
+    {
+        // Filter states to maintain continuity across packets
+        double lowPassState = 0;
+        double highPassState = 0;
+        double lastRawSample = 0;
+        Random random = new Random();
+
+        // Configuration constants
+        double Volume = RadioConfig.speaker_audioFilter_volume; // Lower = more muffled
+        double LP_ALPHA = RadioConfig.speaker_audioFilter_LPAlpha; // Lower = more muffled
+        double HP_ALPHA = RadioConfig.speaker_audioFilter_HPAlpha; // Higher = less bass
+        int NOISE_FLOOR = RadioConfig.speaker_audioFilter_noiseFloor;  // Constant hiss volume
+        int CRACKLE_CHANCE = RadioConfig.speaker_audioFilter_crackleChance; // 1 in 2000 samples
+
+        // no, I did not actually code the audio manipulation part of the filter since I'm not the best at working with audio
+        //actually, I did the volume part myself, ya know, the easiest part; i'm so good
+
+        for (int i = 0; i < decodedData.length; i++) {
+            double currentSample = decodedData[i];
+
+            //Volume multiplier
+            decodedData[i] *= Volume;
+
+            // 1. BANDPASS FILTER (EQ)
+            // Low Pass (Cuts highs)
+            lowPassState = LP_ALPHA * currentSample + (1 - LP_ALPHA) * lowPassState;
+            double filtered = lowPassState;
+
+            // High Pass (Cuts lows)
+            highPassState = HP_ALPHA * highPassState + HP_ALPHA * (filtered - lastRawSample);
+            lastRawSample = filtered;
+
+            // 2. SATURATION (The "Crunch")
+            // Convert to -1.0 to 1.0 range for math
+            double x = highPassState / 32768.0;
+            // Soft clipping formula: (3x - x^3) / 2
+            double saturated = (3 * x - Math.pow(x, 3)) / 2.0;
+
+            // 3. NOISE & INTERFERENCE
+            // Constant low-level hiss
+            int hiss = random.nextInt(NOISE_FLOOR * 2 + 1) - NOISE_FLOOR;
+
+            // Random electrical "crackles"
+            int crackle = (random.nextInt(CRACKLE_CHANCE) == 0) ? (random.nextInt(6000) - 3000) : 0;
+
+            // 4. CLAMP & OUTPUT
+            int finalSample = (int) (saturated * 32767) + hiss + crackle;
+            decodedData[i] = (short) Math.max(-32768, Math.min(32767, finalSample));
+        }
+
+        return decodedData;
+    }
+
     public static boolean isBlockSpeaker(Block block){
         //is the block the specified head type
         return block.getType().equals(RadioConfig.speaker_block_headType) || block.getType().equals(RadioConfig.speaker_block_wallHeadType);
+    }
+
+    public static boolean isBlockSpeaker(Material block){
+        //is the block the specified head type
+        return block.equals(RadioConfig.speaker_block_headType) || block.equals(RadioConfig.speaker_block_wallHeadType);
     }
 }

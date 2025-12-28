@@ -29,6 +29,7 @@ frequency-representation:
 fieldradio:
   audio-filter:
     enabled: true
+    volume: 1.6  # Gain
     LP-alpha: 0.8  # Lower = more muffled
     HP-alpha: 0.85 # Higher = less bass
     noise-floor: 75  # Constant hiss volume
@@ -85,6 +86,14 @@ fieldradio:
 
 
 speaker:
+  audio-filter:
+    enabled: true
+    volume: 1.6  # Gain
+    LP-alpha: 0.6  # Lower = more muffled
+    HP-alpha: 0.9 # Higher = less bass
+    noise-floor: 40  # Constant hiss volume
+    crackle-chance: 3000 # 1 in 3000 chance per sample
+
   ~/block/entity/: false
 
   # currentley no functionality for using entities instead

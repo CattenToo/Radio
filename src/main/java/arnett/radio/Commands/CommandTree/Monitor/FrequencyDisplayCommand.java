@@ -72,7 +72,7 @@ public class FrequencyDisplayCommand implements SubCommand {
                     //player not online so Can't get name (this is slower btw)
                     receiverList.append(Bukkit.getOfflinePlayer(id).getName());
                 }
-                receiverList.append(" Field, ");
+                receiverList.append(", ");
             }
 
             //display

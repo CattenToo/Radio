@@ -2,10 +2,12 @@ package arnett.radio.Items.Speaker;
 
 import arnett.radio.FrequencyManager;
 import arnett.radio.Items.Radio.FieldRadio;
+import arnett.radio.Items.Radio.FieldRadioVoiceChat;
 import arnett.radio.Radio;
 import arnett.radio.RadioConfig;
 import com.destroystokyo.paper.event.block.BlockDestroyEvent;
 import io.papermc.paper.event.block.BlockBreakBlockEvent;
+import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.Location;
 import org.bukkit.block.Crafter;
@@ -13,6 +15,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
 import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.event.entity.ItemSpawnEvent;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
@@ -63,12 +66,14 @@ public class SpeakerListener implements Listener {
         if(!Speaker.isBlockSpeaker(e.getBlock()))
             return;
 
-        //untag the chunk
-        Speaker.untagChunkOfSpeaker(e.getBlock().getChunk(), e.getBlock().getLocation());
+        //wait one tick to untag it because of item drops
+        Bukkit.getScheduler().scheduleSyncDelayedTask(Radio.singleton, () -> {
+            //untag the chunk
+            Speaker.untagChunkOfSpeaker(e.getBlock().getChunk(), e.getBlock().getLocation());
 
-        //Speaker block was destroyed
-        Speaker.removeActiveSpeaker(e.getBlock().getLocation());
-
+            //Speaker block was destroyed
+            Speaker.removeActiveSpeaker(e.getBlock().getLocation());
+        }, 1);
     }
 
     @EventHandler
@@ -85,11 +90,14 @@ public class SpeakerListener implements Listener {
             if(!Speaker.isBlockSpeaker(block))
                 return;
 
-            //untag the chunk
-            Speaker.untagChunkOfSpeaker(block.getChunk(), block.getLocation());
+            //wait one tick to untag it because of item drops
+            Bukkit.getScheduler().scheduleSyncDelayedTask(Radio.singleton, () -> {
+                //untag the chunk
+                Speaker.untagChunkOfSpeaker(block.getChunk(), block.getLocation());
 
-            //Speaker block was destroyed
-            Speaker.removeActiveSpeaker(block.getLocation());
+                //Speaker block was destroyed
+                Speaker.removeActiveSpeaker(block.getLocation());
+            }, 1);
         });
     }
 
@@ -108,18 +116,23 @@ public class SpeakerListener implements Listener {
             if(!Speaker.isBlockSpeaker(block))
                 return;
 
-            //untag the chunk
-            Speaker.untagChunkOfSpeaker(block.getChunk(), block.getLocation());
+            //wait one tick to untag it because of item drops
+            Bukkit.getScheduler().scheduleSyncDelayedTask(Radio.singleton, () -> {
+                //untag the chunk
+                Speaker.untagChunkOfSpeaker(block.getChunk(), block.getLocation());
 
-            //Speaker block was destroyed
-            Speaker.removeActiveSpeaker(block.getLocation());
+                //Speaker block was destroyed
+                Speaker.removeActiveSpeaker(block.getLocation());
+            }, 1);
         });
+
+
     }
 
     @EventHandler
     public void onBlockDestroyed(BlockDestroyEvent e)
     {
-        // tbh idk when this gets called, but it maybe does some times so might as well handle it.
+        // tbh idk when this gets called, but it maybe does sometimes so might as well handle it.
 
         //are we even using blocks for this project
         if(RadioConfig.speaker_useEntity)
@@ -129,14 +142,19 @@ public class SpeakerListener implements Listener {
         if(!Speaker.isBlockSpeaker(e.getBlock()))
             return;
 
-        //untag the chunk
-        Speaker.untagChunkOfSpeaker(e.getBlock().getChunk(), e.getBlock().getLocation());
+        //wait one tick to untag it because of item drops
+        Bukkit.getScheduler().scheduleSyncDelayedTask(Radio.singleton, () -> {
+            //untag the chunk
+            Speaker.untagChunkOfSpeaker(e.getBlock().getChunk(), e.getBlock().getLocation());
 
-        //Speaker block was destroyed
-        Speaker.removeActiveSpeaker(e.getBlock().getLocation());
+            //Speaker block was destroyed
+            Speaker.removeActiveSpeaker(e.getBlock().getLocation());
+        }, 1);
 
-        //tbh i'm not sure when this will even get called, so I'm not dropping an item for this
         e.setWillDrop(false);
+        //spawn it ourselves
+
+        e.getBlock().getLocation().getWorld().dropItemNaturally(e.getBlock().getLocation(), Speaker.getSpeaker(Speaker.getFrequencyOfSpeakerBlock(e.getBlock().getLocation())));
     }
 
     @EventHandler
@@ -149,11 +167,14 @@ public class SpeakerListener implements Listener {
             if(!Speaker.isBlockSpeaker(block))
                 return;
 
-            //untag the chunk
-            Speaker.untagChunkOfSpeaker(block.getChunk(), block.getLocation());
+            //wait one tick to untag it because of item drops
+            Bukkit.getScheduler().scheduleSyncDelayedTask(Radio.singleton, () -> {
+                //untag the chunk
+                Speaker.untagChunkOfSpeaker(block.getChunk(), block.getLocation());
 
-            //Speaker block was destroyed
-            Speaker.removeActiveSpeaker(block.getLocation());
+                //Speaker block was destroyed
+                Speaker.removeActiveSpeaker(block.getLocation());
+            }, 1);
         });
     }
 
@@ -170,12 +191,14 @@ public class SpeakerListener implements Listener {
         if(!Speaker.isBlockSpeaker(e.getToBlock()))
             return;
 
-        //untag the chunk
-        Speaker.untagChunkOfSpeaker(e.getToBlock().getChunk(), e.getToBlock().getLocation());
+        //wait one tick to untag it because of item drops
+        Bukkit.getScheduler().scheduleSyncDelayedTask(Radio.singleton, () -> {
+            //untag the chunk
+            Speaker.untagChunkOfSpeaker(e.getBlock().getChunk(), e.getBlock().getLocation());
 
-        //Speaker block was destroyed
-        Speaker.removeActiveSpeaker(e.getToBlock().getLocation());
-
+            //Speaker block was destroyed
+            Speaker.removeActiveSpeaker(e.getBlock().getLocation());
+        }, 1);
     }
 
 
@@ -188,12 +211,17 @@ public class SpeakerListener implements Listener {
     @EventHandler
     public void onPlayerBreakBlock(BlockDropItemEvent e)
     {
-        if(!Speaker.isBlockSpeaker(e.getBlock()))
+        Radio.logger.info("Block Broken: " + e.getBlockState().getType().name());
+
+        //get block state used for broken block
+        if(!Speaker.isBlockSpeaker(e.getBlockState().getType()))
             return;
+
+        Radio.logger.info("Speaker Broken FQ: " + Speaker.getFrequencyOfSpeakerBlock(e.getBlockState().getBlock()));
 
         //tag the drop
         e.getItems().forEach(item -> {
-            item.setItemStack(FrequencyManager.tagFrequency(item.getItemStack(), Speaker.getFrequencyOfSpeakerBlock(e.getBlock())));
+            item.setItemStack(FrequencyManager.tagFrequency(item.getItemStack(), Speaker.getFrequencyOfSpeakerBlock(e.getBlockState().getLocation())));
         });
     }
 
@@ -203,6 +231,8 @@ public class SpeakerListener implements Listener {
     {
         if(!Speaker.isBlockSpeaker(e.getBlock()))
             return;
+
+        Radio.logger.info("Replaced Speaker: " + Speaker.getFrequencyOfSpeakerBlock(e.getBlock()));
 
         //tag the drop
         e.getDrops().forEach(item -> {

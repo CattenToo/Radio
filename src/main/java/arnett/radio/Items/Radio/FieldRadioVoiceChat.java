@@ -142,14 +142,19 @@ public class FieldRadioVoiceChat {
 
         // Configuration constants
         double LP_ALPHA = RadioConfig.fieldRadio_audioFilter_LPAlpha; // Lower = more muffled
+        double Volume = RadioConfig.fieldRadio_audioFilter_volume; // Lower = more muffled
         double HP_ALPHA = RadioConfig.fieldRadio_audioFilter_HPAlpha; // Higher = less bass
         int NOISE_FLOOR = RadioConfig.fieldRadio_audioFilter_noiseFloor;  // Constant hiss volume
         int CRACKLE_CHANCE = RadioConfig.fieldRadio_audioFilter_crackleChance; // 1 in 2000 samples
 
         // no, I did not actually code the audio manipulation part of the filter since I'm not the best at working with audio
+        //actually, I did the volume part myself, ya know, the easiest part; i'm so good
 
         for (int i = 0; i < decodedData.length; i++) {
-            double currentSample = decodedData   [i];
+            double currentSample = decodedData[i];
+
+            //Volume multiplier
+            decodedData[i] *= Volume;
 
             // 1. BANDPASS FILTER (EQ)
             // Low Pass (Cuts highs)

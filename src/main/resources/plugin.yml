@@ -6,7 +6,7 @@ api-version: '1.21'
 commands:
   fieldradio:
     description: Main command
-    aliases: [fieldradio, radio]
+    aliases: [fieldradio,]
     permission: radio.use
     usage: "Incorrect Usage (/radio <subcommand> ...)"
 

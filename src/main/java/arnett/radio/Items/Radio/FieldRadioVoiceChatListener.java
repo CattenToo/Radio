@@ -156,7 +156,7 @@ public class FieldRadioVoiceChatListener implements Listener {
             if(RadioConfig.fieldRadio_audioFilter_enabled)
             {
                 //modify packet
-                audioData = RadioVoiceChat.encoder.encode(FieldRadioVoiceChat.applyFilter(RadioVoiceChat.decoder.decode(audioData)));
+                audioData = RadioVoiceChat.getEncoder(player.getUniqueId()).encode(FieldRadioVoiceChat.applyFilter(RadioVoiceChat.getDecoder(player.getUniqueId()).decode(audioData)));
             }
 
             //send audio

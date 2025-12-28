@@ -113,9 +113,8 @@ public class SetConfigValueCommand implements SubCommand {
                         else
                             keys.remove(ignore);
 
+                    keys.remove(key);
                 }
-
-                keys.remove(key);
             }
 
             return keys.stream().toList();
@@ -151,6 +150,7 @@ public class SetConfigValueCommand implements SubCommand {
             //next argument present
             return getSubcommandArguments(player, args, level + 1);
         }
+
 
         return List.of();
     }

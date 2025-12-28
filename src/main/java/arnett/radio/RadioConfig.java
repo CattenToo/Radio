@@ -19,6 +19,7 @@ public class RadioConfig {
     //field radio
         //  Audio Filter
         public static boolean fieldRadio_audioFilter_enabled;
+        public static double fieldRadio_audioFilter_volume;
         public static double fieldRadio_audioFilter_LPAlpha;
         public static double fieldRadio_audioFilter_HPAlpha;
         public static int fieldRadio_audioFilter_noiseFloor;
@@ -39,6 +40,14 @@ public class RadioConfig {
     //speaker
     public static boolean speaker_useEntity;
     public static int speaker_soundRange;
+
+        //  Audio Filter
+        public static boolean speaker_audioFilter_enabled;
+        public static double speaker_audioFilter_volume;
+        public static double speaker_audioFilter_LPAlpha;
+        public static double speaker_audioFilter_HPAlpha;
+        public static int speaker_audioFilter_noiseFloor;
+        public static int speaker_audioFilter_crackleChance;
 
         // Recipe
         public static boolean speaker_recipe_basic_enabled;
@@ -67,6 +76,7 @@ public class RadioConfig {
          //field radio
              //  Audio Filter
              fieldRadio_audioFilter_enabled = Radio.config.getBoolean("fieldradio.audio-filter.enabled");
+             fieldRadio_audioFilter_volume = Radio.config.getDouble("fieldradio.audio-filter.volume");
              fieldRadio_audioFilter_LPAlpha = Radio.config.getDouble("fieldradio.audio-filter.LP-alpha");
              fieldRadio_audioFilter_HPAlpha = Radio.config.getDouble("fieldradio.audio-filter.HP-alpha");
              fieldRadio_audioFilter_noiseFloor = Radio.config.getInt("fieldradio.audio-filter.noise-floor");
@@ -89,6 +99,14 @@ public class RadioConfig {
         //speaker
         speaker_useEntity = Radio.config.getBoolean("speaker.use-entity");
         speaker_soundRange = Radio.config.getInt("speaker.sound-range");
+
+            //  Audio Filter
+            speaker_audioFilter_enabled = Radio.config.getBoolean("speaker.audio-filter.enabled");
+            speaker_audioFilter_volume = Radio.config.getDouble("speaker.audio-filter.volume");
+            speaker_audioFilter_LPAlpha = Radio.config.getDouble("speaker.audio-filter.LP-alpha");
+            speaker_audioFilter_HPAlpha = Radio.config.getDouble("speaker.audio-filter.HP-alpha");
+            speaker_audioFilter_noiseFloor = Radio.config.getInt("speaker.audio-filter.noise-floor");
+            speaker_audioFilter_crackleChance = Radio.config.getInt("speaker.audio-filter.crackle-chance");
 
             // Recipe
                 //basic
