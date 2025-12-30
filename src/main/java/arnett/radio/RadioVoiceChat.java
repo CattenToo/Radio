@@ -60,13 +60,11 @@ public class RadioVoiceChat implements VoicechatPlugin {
 
     public static OpusEncoder removeDecoder(UUID id)
     {
-        Radio.logger.info("Removed Encoder");
         return encoders.remove(id);
     }
 
     public static OpusDecoder removeEncoder(UUID id)
     {
-        Radio.logger.info("Removed Decoder");
         return decoders.remove(id);
     }
 

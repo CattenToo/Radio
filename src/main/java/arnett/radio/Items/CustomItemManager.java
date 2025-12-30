@@ -113,14 +113,12 @@ public class CustomItemManager {
         //field radio
         for(NamespacedKey r : FieldRadio.getRecipekeys())
         {
-            Radio.logger.info("Removed Recipe: " + r.getKey());
             Bukkit.removeRecipe(r);
         }
 
         //speaker
         for(NamespacedKey r : Speaker.getRecipekeys())
         {
-            Radio.logger.info("Removed Recipe: " + r.getKey());
             Bukkit.removeRecipe(r);
         }
 

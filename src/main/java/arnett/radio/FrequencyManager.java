@@ -195,7 +195,6 @@ public class FrequencyManager {
         String[] split = frequency.split(RadioConfig.frequencySplitString);
         for(int i = 0; i < split.length; i++)
         {
-            Radio.logger.info(split[i]);
             c = c.append(Component.text(split[i] + (i == split.length - 1 ? "" : RadioConfig.frequencySplitString))
                     .color(CustomItemManager.getFrequencyTextColor(split[i]))
             );
@@ -253,7 +252,7 @@ public class FrequencyManager {
                 catch (Exception e)
                 {
                     //material not found or something went wrong
-                    Radio.logger.info("Incorrectly registered Material For Radio basic recipe");
+                    Radio.logger.warning("Incorrectly registered Material For Radio basic recipe");
                     mat = Material.AIR;
                 }
                 if (mat != null) {
@@ -262,28 +261,12 @@ public class FrequencyManager {
             }
         }
 
-        //add dyes
-        for(int i = 0; i < 8; i++)
-        {
-            try
-            {
-                recipe.setIngredient((char)( i + '0'), dyes);
-                Radio.logger.info("Added Dye for " + i);
-            }
-            catch (Exception e)
-            {
-                Radio.logger.info("stopped at " + i);
-                //frequency not in recipe so exit
-                break;
-            }
-        }
-
         return recipe;
     }
 
     public static String getFrequency(ItemStack item)
     {
-        return item.getPersistentDataContainer().getOrDefault(radioFrequencyKey, PersistentDataType.STRING, "none");
+        return item.getPersistentDataContainer().getOrDefault(radioFrequencyKey, PersistentDataType.STRING, "");
     }
 
     public static int[] convertToIntFrequency(String frequency)

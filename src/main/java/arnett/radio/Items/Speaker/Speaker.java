@@ -5,23 +5,18 @@ import arnett.radio.FrequencyManager;
 import arnett.radio.Radio;
 import arnett.radio.RadioVoiceChat;
 import com.destroystokyo.paper.MaterialTags;
-import de.maxhenkel.voicechat.api.Position;
-import de.maxhenkel.voicechat.api.ServerLevel;
+import de.maxhenkel.voicechat.api.Entity;
 import de.maxhenkel.voicechat.api.audiochannel.AudioChannel;
+import de.maxhenkel.voicechat.api.audiochannel.EntityAudioChannel;
 import de.maxhenkel.voicechat.api.audiochannel.LocationalAudioChannel;
-import de.maxhenkel.voicechat.api.events.MicrophonePacketEvent;
-import de.maxhenkel.voicechat.api.packets.MicrophonePacket;
-import de.maxhenkel.voicechat.api.packets.Packet;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.*;
 import org.bukkit.block.Block;
-import org.bukkit.block.data.BlockData;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.inventory.*;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -36,12 +31,16 @@ public class Speaker {
     public static final NamespacedKey speakerRetuneKey = new NamespacedKey(Radio.singleton, "speaker_retune");
 
     public static final NamespacedKey speakerModelKey = new NamespacedKey("radio", "speaker");
+    public static final NamespacedKey speakerDisplayModelKey = new NamespacedKey("radio", "speaker_display");
+    public static final NamespacedKey speakerWallDisplayModelKey = new NamespacedKey("radio", "speaker_wall_display");
+
+    public static final NamespacedKey speakerEntityLinkKey = new NamespacedKey("speaker", "link");
 
     // this is used to track active locational channels if using blocks since it's easier on the server
     // or active entity channels if not since they need to be entities anyway
     // active meaning that they are not in an unloaded chunk.
-    // Frequencies map to maps of Worlds which contain the list of channels, it's not that bad
-    public static HashMap<String, HashMap<World, ArrayList<AudioChannel>>> activeSpeakers = new HashMap<>();
+    // Frequencies map to maps of Worlds which contains a list of players and a list of their channels, it's not that bad
+    public static HashMap<SpeakerSession, LinkedHashMap<UUID, AudioChannel>> activeSpeakers = new HashMap<>();
 
 
     public static ArrayList<Recipe> getRecipes()
@@ -109,10 +108,10 @@ public class Speaker {
         if(RadioConfig.speaker_useEntity)
             return getSpeakerEntityItem();
         else
-            return getspeakerBlockItem();
+            return getSpeakerBlockItem();
     }
 
-    static ItemStack getspeakerBlockItem()
+    static ItemStack getSpeakerBlockItem()
     {
         ItemStack speaker;
 
@@ -126,7 +125,7 @@ public class Speaker {
         }
 
         //sets Item visuals
-        speaker.setData(DataComponentTypes.ITEM_NAME, Component.text("Speaker"));
+        speaker.setData(DataComponentTypes.ITEM_NAME, Component.text("Speaker", NamedTextColor.YELLOW));
         speaker.setData(DataComponentTypes.ITEM_MODEL, speakerModelKey);
 
         //Adds Identifier tag
@@ -141,9 +140,21 @@ public class Speaker {
 
     static ItemStack getSpeakerEntityItem()
     {
-        ItemStack speaker = new ItemStack(Material.AIR);
+        ItemStack speaker = new ItemStack(RadioConfig.speaker_entity_baseMaterial);
 
-        //todo entity version of the speaker
+        //sets Item visuals
+        speaker.setData(DataComponentTypes.ITEM_NAME, Component.text("Speaker", NamedTextColor.YELLOW));
+        speaker.setData(DataComponentTypes.ITEM_MODEL, speakerModelKey);
+
+        //Adds Identifier tag
+        speaker.editPersistentDataContainer(pdc -> {
+            pdc.set(speakerIdentifierKey, PersistentDataType.STRING, "speaker");
+        });
+
+        //removes jukebox functionality
+        speaker.unsetData(DataComponentTypes.JUKEBOX_PLAYABLE);
+
+        speaker.setData(DataComponentTypes.ITEM_NAME, Component.text("Speaker"));
 
         return speaker;
     }
@@ -151,7 +162,7 @@ public class Speaker {
     public static boolean isSpeaker(ItemStack item)
     {
         //todo don't forget to replace true here when entity version is ready
-        if(item.getType() != (RadioConfig.speaker_useEntity ? true : RadioConfig.speaker_block_headType))
+        if(item.getType() != (RadioConfig.speaker_useEntity ? RadioConfig.speaker_entity_baseMaterial : RadioConfig.speaker_block_headType))
             return false;
 
         return item.getPersistentDataContainer().has(speakerIdentifierKey, PersistentDataType.STRING);
@@ -167,51 +178,101 @@ public class Speaker {
 
         newAudioChannel.setDistance(RadioConfig.speaker_soundRange);
 
-        //add it to the list (create entry if not present)
-        activeSpeakers.computeIfAbsent(frequency, (fq) -> new HashMap<>())
-                .computeIfAbsent(location.getWorld(), (world) -> new ArrayList<>())
-                    .add(newAudioChannel);
+        addSpeakerToActiveList(location, frequency);
+    }
 
-        Radio.logger.info("Added Speaker to list " + frequency);
-        Radio.logger.info("at " + location.getX() + ", " + location.getY() + ", " + location.getZ());
+    //used when using entities for speakers
+    public static void addActiveSpeaker(Location location, String frequency, Entity entity)
+    {
+        EntityAudioChannel newAudioChannel = RadioVoiceChat.api.createEntityAudioChannel(
+                UUID.randomUUID(),
+                entity
+        );
+
+        newAudioChannel.setDistance(RadioConfig.speaker_soundRange);
+
+        addSpeakerToActiveList(location, frequency, entity);
+    }
+
+    private static void addSpeakerToActiveList(Location location, String frequency)
+    {
+        //add it to the list (create entry if not present)
+        activeSpeakers.put(new SpeakerSession(frequency, location, null), new LinkedHashMap<>(RadioConfig.speaker_cacheSize + 1, .75f, true)
+        {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<UUID, AudioChannel> eldest) {
+                return size() > RadioConfig.speaker_cacheSize; // Removes oldest when size exceeds 8
+            }
+        });
+    }
+
+    private static void addSpeakerToActiveList(Location location, String frequency, Entity entity)
+    {
+        //add it to the list (create entry if not present)
+        activeSpeakers.put(new SpeakerSession(frequency, location, entity), new LinkedHashMap<>(RadioConfig.speaker_cacheSize + 1, .75f, true)
+        {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<UUID, AudioChannel> eldest) {
+                return size() > RadioConfig.speaker_cacheSize; // Removes oldest when size exceeds 8
+            }
+        });
     }
 
     public static void removeActiveSpeaker(Location location)
     {
-        //remove it from the list by checking the x y z and world
-        activeSpeakers.entrySet().removeIf((frequencyMapEntry) ->{
-            frequencyMapEntry.getValue().entrySet().removeIf((worldEnrty) -> {
-                worldEnrty.getValue().removeIf((audioChannel) -> {
-
-                    return audioChannel instanceof LocationalAudioChannel channel &&
-                            location.getBlockX() == (int)channel.getLocation().getX() &&
-                            location.getBlockY() == (int)channel.getLocation().getY() &&
-                            location.getBlockZ() == (int)channel.getLocation().getZ() &&
-                            location.getWorld().equals(worldEnrty.getKey());
-                });
-
-                //clear any empty entries
-                return worldEnrty.getValue().isEmpty();
-            });
-
-            //clear any empty entries
-            return frequencyMapEntry.getValue().isEmpty();
+        //remove it from the list by checking the location
+        activeSpeakers.entrySet().removeIf((session) -> {
+            return session.getKey().location().equals(location);
         });
-
-        Radio.logger.info("Removed Speaker from list ");
-        Radio.logger.info("at " + location.getX() + ", " + location.getY() + ", " + location.getZ());
     }
 
-    public static void sendMicrophonePacketToFrequency(MicrophonePacketEvent e, String frequency)
+    public static void removeActiveSpeaker(Entity entity)
     {
-        short[] decodedAudio = applyFilter(RadioVoiceChat.getDecoder(e.getSenderConnection().getPlayer().getUuid()).decode(e.getPacket().getOpusEncodedData()));
-
-        //search active speakers for ones connected to frequency
-        activeSpeakers.getOrDefault(frequency, new HashMap<>()).forEach((world, channelList)->{
-            channelList.forEach((channel)->{
-                channel.send(RadioVoiceChat.getEncoder(e.getSenderConnection().getPlayer().getUuid()).encode(decodedAudio));
-            });
+        //remove it from the list by checking the location
+        activeSpeakers.entrySet().removeIf((session) -> {
+            return session.getKey().entity().equals(entity);
         });
+    }
+
+    public static void sendMicrophonePacketToFrequency(UUID sender, byte[] encodedAudio, String frequency)
+    {
+        //send the packet out to speakers
+        activeSpeakers.forEach((session, map) -> {
+            //if they are the correct frequency
+            if(session.frequency().equals(frequency))
+            {
+                //get the channel belonging to the player, or create one if it isn't present
+                map.computeIfAbsent(sender, (id) -> createAudioChannelForSession(session)).send(encodedAudio);
+            }
+        });
+    }
+
+    public static AudioChannel createAudioChannelForSession(SpeakerSession session)
+    {
+        if(session.entity() == null)
+        {
+            //we are dealing with a block speaker
+            Location location = session.location();
+
+            return RadioVoiceChat.api.createLocationalAudioChannel(
+
+                    //random, NOT player because client only allows one channel that way
+                    UUID.randomUUID(),
+
+                    //world
+                    RadioVoiceChat.api.fromServerLevel(
+                            location.getWorld()),
+
+                    //position
+                    RadioVoiceChat.api.createPosition(
+                            location.blockX(), location.blockY(), location.blockZ()
+                    ));
+        }
+        else
+        {
+            //we are dealing with an entity speaker
+            return RadioVoiceChat.api.createEntityAudioChannel(UUID.randomUUID(),session.entity());
+        }
     }
 
     public static void tagChunkOfSpeaker(Chunk chunk, Location blockLocation, String frequency){
@@ -247,8 +308,6 @@ public class Speaker {
 
         //tag the chunk or update the tag
         chunkPdc.set(Speaker.speakerIdentifierKey, PersistentDataType.LIST.integerArrays(), locationsArray);
-
-        Radio.logger.info("Chunk Tagged");
     }
 
     public static void untagChunkOfSpeaker(Chunk chunk, Location blockLocation){
@@ -282,8 +341,6 @@ public class Speaker {
             //out of speakers
             chunkPdc.remove(Speaker.speakerIdentifierKey);
         }
-
-        Radio.logger.info("Chunk Untagged");
     }
 
     public static String getFrequencyOfSpeakerBlock(Block block)
@@ -393,5 +450,10 @@ public class Speaker {
     public static boolean isBlockSpeaker(Material block){
         //is the block the specified head type
         return block.equals(RadioConfig.speaker_block_headType) || block.equals(RadioConfig.speaker_block_wallHeadType);
+    }
+
+    public static boolean isEntitySpeaker(ItemStack item){
+        //is the block the specified head type
+        return item != null && item.getType().equals(RadioConfig.speaker_entity_baseMaterial) && item.getPersistentDataContainer().has(speakerIdentifierKey);
     }
 }

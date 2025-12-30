@@ -27,18 +27,25 @@ frequency-representation:
 
 # Field Radio
 fieldradio:
+
+  #hide these in set command
+  ~/base-material/: false
+
   audio-filter:
     enabled: true
     volume: 1.6  # Gain
-    LP-alpha: 0.8  # Lower = more muffled
-    HP-alpha: 0.85 # Higher = less bass
-    noise-floor: 75  # Constant hiss volume
-    crackle-chance: 3000 # 1 in 3000 chance per sample
+    LP-alpha: .4 # Lower = more muffled
+    HP-alpha: 0.75 # Higher = less bass
+    noise-floor: 35 # Constant hiss volume
+    crackle-chance: 30000 # 1 in 3000 chance per sample
 
   # this is so that the radio doesn't cut out at the end
   # 200000000 is default at what I believe is .2s
   # this is milliseconds and is NOT based off ticks
   grace-period: 200000000
+
+  # base material the field radio uses, set to use music discs by default
+  base-material: MUSIC_DISC_13
 
   recipe:
 
@@ -58,22 +65,6 @@ fieldradio:
         R: "REDSTONE"
         A: "AMETHYST_SHARD"
 
-    # Crafting the Broadcast radio
-    broadcast:
-      enabled: true
-
-      # Use 0 for main frequency and numbers 1 - 9 for subfrequencies,
-      # Recommended to have a main frequency and one subfrequency
-      shape:
-        - "0A0"
-        - "IDI"
-        - "0C0"
-      ingredients:
-        C: "COPPER_INGOT"
-        I: "IRON_INGOT"
-        R: "REDSTONE"
-        A: "AMETHYST_SHARD"
-
     # Resting the frequency of the radio
     retune:
       enabled: true
@@ -86,6 +77,15 @@ fieldradio:
 
 
 speaker:
+  #hide these in set command
+  ~/block/entity/: false
+
+  # weather the speaker uses a block or an entity
+  # this is specifically so that you can have the option to override a head
+  # or just use an entity and not override any blocks
+  use-entity: false
+
+  # applied when talking through speaker
   audio-filter:
     enabled: true
     volume: 1.6  # Gain
@@ -94,10 +94,8 @@ speaker:
     noise-floor: 40  # Constant hiss volume
     crackle-chance: 3000 # 1 in 3000 chance per sample
 
-  ~/block/entity/: false
-
-  # currentley no functionality for using entities instead
-  use-entity: false
+  # cache size for number of stored channels for people speaking on a frequency
+  cache-size: 8
 
   sound-range: 32
 
@@ -139,6 +137,17 @@ speaker:
     # shouldn't be changing this one in config during server runtime
     wall-head-type: "PIGLIN_WALL_HEAD"
 
-    # used if use-entity is set to true
-    # shouldn't be changing this one in config during server runtime
-  entity: ""
+  # used if use-entity is set to true
+  # shouldn't be changing this one in config during server runtime
+  entity:
+    # base material the speaker uses, needs to be one which can be placed
+    base-material: DARK_OAK_BUTTON
+
+    # .5 0 .5 sets it at the regular block placement
+    display-offset:
+      x: 0.5
+      y: 0.5
+      z: 0.5
+
+    interaction-width: .6
+    interaction-height: .6

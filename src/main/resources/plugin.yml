@@ -4,9 +4,9 @@ main: arnett.radio.Radio
 api-version: '1.21'
 
 commands:
-  fieldradio:
+  radiotools:
     description: Main command
-    aliases: [fieldradio,]
+    aliases: [fieldradio, radio]
     permission: radio.use
     usage: "Incorrect Usage (/radio <subcommand> ...)"
 

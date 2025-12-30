@@ -2,7 +2,7 @@ package arnett.radio;
 
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
-import org.jetbrains.annotations.Nullable;
+import org.bukkit.util.Vector;
 
 import java.util.List;
 
@@ -17,6 +17,8 @@ public class RadioConfig {
     public static String frequencySplitString;
 
     //field radio
+    public static Material fieldRadio_baseMaterial;
+
         //  Audio Filter
         public static boolean fieldRadio_audioFilter_enabled;
         public static double fieldRadio_audioFilter_volume;
@@ -39,6 +41,7 @@ public class RadioConfig {
 
     //speaker
     public static boolean speaker_useEntity;
+    public static int speaker_cacheSize;
     public static int speaker_soundRange;
 
         //  Audio Filter
@@ -61,7 +64,11 @@ public class RadioConfig {
         public static Material speaker_block_headType;
         public static Material speaker_block_wallHeadType;
 
-    // entity
+        // entity
+        public static Material speaker_entity_baseMaterial;
+        public static float speaker_entity_interactionWidth;
+        public static float speaker_entity_interactionHeight;
+        public static Vector speaker_entity_displayOffset;
 
 
 
@@ -74,6 +81,8 @@ public class RadioConfig {
          frequencySplitString = Radio.config.getString("frequency-representation.separating-string");
 
          //field radio
+
+
              //  Audio Filter
              fieldRadio_audioFilter_enabled = Radio.config.getBoolean("fieldradio.audio-filter.enabled");
              fieldRadio_audioFilter_volume = Radio.config.getDouble("fieldradio.audio-filter.volume");
@@ -82,8 +91,11 @@ public class RadioConfig {
              fieldRadio_audioFilter_noiseFloor = Radio.config.getInt("fieldradio.audio-filter.noise-floor");
              fieldRadio_audioFilter_crackleChance = Radio.config.getInt("fieldradio.audio-filter.crackle-chance");
 
-             // Radio Grace perood
-             fieldRadio_gracePeriod = Radio.config.getLong("fieldradio.grace-period");
+         // Radio Grace period
+         fieldRadio_gracePeriod = Radio.config.getLong("fieldradio.grace-period");
+
+         //base material
+         fieldRadio_baseMaterial = Material.matchMaterial(Radio.config.getString("fieldradio.base-material"));
 
              // Radio Recipe
                 //basic
@@ -99,6 +111,8 @@ public class RadioConfig {
         //speaker
         speaker_useEntity = Radio.config.getBoolean("speaker.use-entity");
         speaker_soundRange = Radio.config.getInt("speaker.sound-range");
+        speaker_cacheSize = Radio.config.getInt("speaker.cache-size");
+
 
             //  Audio Filter
             speaker_audioFilter_enabled = Radio.config.getBoolean("speaker.audio-filter.enabled");
@@ -124,7 +138,16 @@ public class RadioConfig {
             speaker_block_wallHeadType = Material.matchMaterial(Radio.config.getString("speaker.block.wall-head-type"));
 
             //entity
-            // todo
+            //base material
+            speaker_entity_baseMaterial = Material.matchMaterial(Radio.config.getString("speaker.entity.base-material"));
+            speaker_entity_interactionWidth = (float)Radio.config.getDouble("speaker.entity.interaction-width");
+            speaker_entity_interactionHeight = (float)Radio.config.getDouble("speaker.entity.interaction-height");
+            ConfigurationSection displayOffset = Radio.config.getConfigurationSection("speaker.entity.display-offset");
+            speaker_entity_displayOffset = new Vector(
+                    (float)displayOffset.getDouble("x"),
+                    (float)displayOffset.getDouble("y"),
+                    (float)displayOffset.getDouble("z")
+            );
 
     }
 }
