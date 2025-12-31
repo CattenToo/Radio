@@ -29,7 +29,6 @@ frequency-representation:
 fieldradio:
   audio-filter:
     enabled: true
-    volume: 1.6  # Gain
     LP-alpha: 0.8  # Lower = more muffled
     HP-alpha: 0.85 # Higher = less bass
     noise-floor: 75  # Constant hiss volume
@@ -39,6 +38,9 @@ fieldradio:
   # 200000000 is default at what I believe is .2s
   # this is milliseconds and is NOT based off ticks
   grace-period: 200000000
+
+  # base material the field radio uses, set to use music discs by default
+  base-material: MUSIC_DISC_13
 
   recipe:
 
@@ -58,22 +60,6 @@ fieldradio:
         R: "REDSTONE"
         A: "AMETHYST_SHARD"
 
-    # Crafting the Broadcast radio
-    broadcast:
-      enabled: true
-
-      # Use 0 for main frequency and numbers 1 - 9 for subfrequencies,
-      # Recommended to have a main frequency and one subfrequency
-      shape:
-        - "0A0"
-        - "IDI"
-        - "0C0"
-      ingredients:
-        C: "COPPER_INGOT"
-        I: "IRON_INGOT"
-        R: "REDSTONE"
-        A: "AMETHYST_SHARD"
-
     # Resting the frequency of the radio
     retune:
       enabled: true
@@ -86,20 +72,26 @@ fieldradio:
 
 
 speaker:
+
+  ~/block/entity/: false
+
+  # weather the speaker uses a block or an entity
+  # this is specifically so that you can have the option to override a head
+  # or just use an entity and not override any blocks
+  use-entity: false
+
+  # cache size for number of stored channels for people speaking on a frequency
+  cache-size: 8
+
+  sound-range: 32
+
   audio-filter:
     enabled: true
-    volume: 1.6  # Gain
     LP-alpha: 0.6  # Lower = more muffled
     HP-alpha: 0.9 # Higher = less bass
     noise-floor: 40  # Constant hiss volume
     crackle-chance: 3000 # 1 in 3000 chance per sample
 
-  ~/block/entity/: false
-
-  # currentley no functionality for using entities instead
-  use-entity: false
-
-  sound-range: 32
 
   recipe:
     basic:
@@ -139,6 +131,67 @@ speaker:
     # shouldn't be changing this one in config during server runtime
     wall-head-type: "PIGLIN_WALL_HEAD"
 
-    # used if use-entity is set to true
-    # shouldn't be changing this one in config during server runtime
-  entity: ""
+  # used if use-entity is set to true
+  # shouldn't be changing this one in config during server runtime
+  entity:
+    # base material the speaker uses, needs to be one which can be placed
+    base-material: DARK_OAK_BUTTON
+
+    # .5 0 .5 sets it at the regular block placement
+    display-offset:
+      x: 0.5
+      y: 0.5
+      z: 0.5
+
+    interaction-width: .6
+    interaction-height: .6
+
+microphone:
+  #hide these in set command
+  ~/entity/: false
+
+  # applied when talking through microphone
+  audio-filter:
+    enabled: true # if this is too intensive on the server you can disable it with this
+    volume: 1.6  # Gain
+    LP-alpha: 0.6  # Lower = more muffled
+    HP-alpha: 0.9 # Higher = less bass
+    noise-floor: 40  # Constant hiss volume
+    crackle-chance: 3000 # 1 in 3000 chance per sample
+
+  recipe:
+    basic:
+      enabled: true
+
+      # Use 0 for main frequency and numbers 1 - 9 for subfrequencies,
+      # Recommended to have only a main frequency
+      shape:
+        - "0II"
+        - "III"
+        - "III"
+      ingredients:
+        I: "IRON_INGOT"
+
+    # Resting the frequency of the speaker
+    retune:
+      enabled: true
+
+      # Use SPEAKER for radio and DYE for frequencies
+      ingredients:
+        - "MICROPHONE"
+        - "DYE"
+
+  # used if use-entity is set to true
+  # shouldn't be changing this one in config during server runtime
+  entity:
+    # base material the speaker uses, needs to be one which can be placed
+    base-material: DARK_OAK_BUTTON
+
+    # .5 0 .5 sets it at the regular block placement
+    display-offset:
+      x: 0.5
+      y: 0.5
+      z: 0.5
+
+    interaction-width: .6
+    interaction-height: .6

@@ -2,9 +2,14 @@ package arnett.radio;
 
 import arnett.radio.Items.CustomItemManager;
 import arnett.radio.Items.Radio.FieldRadio;
+import arnett.radio.Items.Radio.FieldRadioVoiceChat;
+import arnett.radio.Items.Speaker.Speaker;
 import com.destroystokyo.paper.MaterialTags;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
+import de.maxhenkel.voicechat.api.VoicechatServerApi;
+import de.maxhenkel.voicechat.api.packets.MicrophonePacket;
+import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.TextColor;
@@ -12,15 +17,18 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.RecipeChoice;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.persistence.PersistentDataType;
+import org.w3c.dom.Text;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
 
 public class FrequencyManager {
 
@@ -162,7 +170,6 @@ public class FrequencyManager {
         String[] split = frequency.split(RadioConfig.frequencySplitString);
         for(int i = 0; i < split.length; i++)
         {
-            Radio.logger.info(split[i]);
             c = c.append(Component.text(split[i] + (i == split.length - 1 ? "" : RadioConfig.frequencySplitString))
                     .color(CustomItemManager.getFrequencyTextColor(split[i]))
             );
@@ -172,6 +179,25 @@ public class FrequencyManager {
         c = c.append(Component.text( "> ")).color(mainFqTextColor);
 
         return c;
+    }
+
+    public static BossBar.Color getBossBarColor(String frequency)
+    {
+        int splitFirstIndex = frequency.indexOf(RadioConfig.frequencySplitString);
+
+        //if it doesn't have a split
+        if(splitFirstIndex == -1)
+            splitFirstIndex = frequency.length();
+
+        String mainFq = frequency.substring(0, splitFirstIndex);
+
+        try {
+            return BossBar.Color.valueOf(mainFq);
+        }
+        catch (Exception e)
+        {
+            return BossBar.Color.WHITE;
+        }
     }
 
     public static TextComponent getColoredFrequencyMessage(String frequency, Player sender, Component message)
@@ -244,7 +270,6 @@ public class FrequencyManager {
         //defines the ingredients (the letters in the shape)
         if (ingredients != null) {
             for (String key : ingredients.getKeys(false)) {
-
                 //just a basic material
                 Material mat;
                 try{
@@ -268,11 +293,9 @@ public class FrequencyManager {
             try
             {
                 recipe.setIngredient((char)( i + '0'), dyes);
-                Radio.logger.info("Added Dye for " + i);
             }
             catch (Exception e)
             {
-                Radio.logger.info("stopped at " + i);
                 //frequency not in recipe so exit
                 break;
             }
@@ -284,6 +307,11 @@ public class FrequencyManager {
     public static String getFrequency(ItemStack item)
     {
         return item.getPersistentDataContainer().getOrDefault(radioFrequencyKey, PersistentDataType.STRING, "none");
+    }
+
+    public static String getFrequency(Entity e)
+    {
+        return e.getPersistentDataContainer().getOrDefault(radioFrequencyKey, PersistentDataType.STRING, "");
     }
 
     public static int[] convertToIntFrequency(String frequency)
@@ -322,5 +350,14 @@ public class FrequencyManager {
         stack.lore(List.of(Component.text(FrequencyManager.convertToDisplayFrequency(frequency))));
 
         return stack;
+    }
+
+    public static void sendToFrequency(UUID sender, byte[] audioData, String frequency, MicrophonePacket packet)
+    {
+        //send to speakers
+        Speaker.sendMicrophonePacketToFrequency(sender, audioData, frequency);
+
+        //send to field radios
+        FieldRadioVoiceChat.sendPacketToFrequency(sender, audioData, frequency, packet);
     }
 }

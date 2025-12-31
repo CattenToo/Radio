@@ -57,7 +57,6 @@ public class FrequencyDisplayCommand implements SubCommand {
             //check if args match frequency
             if(!frequency.startsWith(argFrequency.toString()))
             {
-                Radio.logger.info("Failed for" + argFrequency.toString() + " " + frequency);
                 return;
             }
 
@@ -84,19 +83,25 @@ public class FrequencyDisplayCommand implements SubCommand {
 
         //speakers
         {
-            Speaker.activeSpeakers.forEach((fq, map) -> {
-                if(fq.startsWith(argFrequency.toString()))
-                    map.forEach((world, audioChannels) -> {
-                        audioChannels.forEach((audioChannel -> {
-                            receiverList.append(fq).append(" Speaker, ");
-                        }));
-                    });
+            Speaker.activeSpeakers.forEach((session, map) -> {
+                //if the frequency matches
+                if(session.frequency().startsWith(argFrequency.toString()))
+                    receiverList.append(session.location().getWorld().getName())
+                            .append(" ")
+                            .append(session.location().x())
+                            .append(" ")
+                            .append(session.location().y())
+                            .append(" ")
+                            .append(session.location().z())
+                            .append(" Speaker ")
+                            .append(map.size())
+                            .append(", ");
             });
 
             //display
             if(!receiverList.isEmpty())
                 player.sendMessage(Component.text("Speakers: ")
-                    .append(Component.text(receiverList.toString())));
+                        .append(Component.text(receiverList.toString())));
         }
 
         player.sendMessage(Component.text("Search Complete").decorate(TextDecoration.BOLD));

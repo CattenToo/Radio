@@ -1,5 +1,7 @@
 package arnett.radio.Items;
 
+import arnett.radio.Items.Microphone.Microphone;
+import arnett.radio.Items.Microphone.MicrophoneListener;
 import arnett.radio.Items.Speaker.Speaker;
 import arnett.radio.RadioConfig;
 import arnett.radio.Items.Speaker.SpeakerListener;
@@ -8,7 +10,6 @@ import arnett.radio.FrequencyManager;
 import arnett.radio.Items.Radio.FieldRadio;
 import arnett.radio.Items.Radio.FieldRadioListener;
 import arnett.radio.Items.Radio.FieldRadioVoiceChatListener;
-import arnett.radio.RadioVoiceChat;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.*;
 import org.bukkit.inventory.Recipe;
@@ -18,6 +19,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 // tbh this class isn't used that much, but I'm keeping because I want to
 // and because it looks better for when there are more items
 public class CustomItemManager {
+
+    public static final NamespacedKey entityLinkKey = new NamespacedKey("radio", "link");
 
     public static void registerItemEvents(JavaPlugin plugin)
     {
@@ -32,9 +35,12 @@ public class CustomItemManager {
 
         //speaker
         plugin.getServer().getPluginManager().registerEvents(new SpeakerListener(), plugin);
+
+        //microphone
+        plugin.getServer().getPluginManager().registerEvents(new MicrophoneListener(), plugin);
     }
 
-    public static void registerRecipies()
+    public static void registerRecipes()
     {
         //radio
         for(Recipe r : FieldRadio.getRecipes())
@@ -53,6 +59,16 @@ public class CustomItemManager {
                 Radio.logger.info("Added Recipe: " + keyedRecipe.getKey());
             else
                 Radio.logger.info("Added Recipe for speaker" );
+            Bukkit.addRecipe(r);
+        }
+
+        //microphone
+        for(Recipe r : Microphone.getRecipes())
+        {
+            if(r instanceof Keyed keyedRecipe)
+                Radio.logger.info("Added Recipe: " + keyedRecipe.getKey());
+            else
+                Radio.logger.info("Added Recipe for microphone" );
             Bukkit.addRecipe(r);
         }
     }
@@ -124,7 +140,13 @@ public class CustomItemManager {
             Bukkit.removeRecipe(r);
         }
 
+        //microphone
+        for(NamespacedKey r : Microphone.getRecipeKeys())
+        {
+            Bukkit.removeRecipe(r);
+        }
+
         //re add them
-        registerRecipies();
+        registerRecipes();
     }
 }

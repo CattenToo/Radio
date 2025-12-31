@@ -8,6 +8,8 @@ import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.Consumable;
 import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.DyeColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -31,8 +33,6 @@ public class FieldRadio {
     //namspace key in resource pack for custom model
     public static final NamespacedKey radioModelKey = new NamespacedKey("radio", "field_radio");
 
-    public static final Material RadioMaterial = Material.MUSIC_DISC_13;
-
     public static ArrayList<Recipe> getRecipes()
     {
         ArrayList<Recipe> recipes = new ArrayList<Recipe>();
@@ -40,7 +40,7 @@ public class FieldRadio {
         // Plain Radio
         if(RadioConfig.fieldRadio_recipe_basic_enabled)
             recipes.add(FrequencyManager.getFrequencyIndependentShapedRecipe(radioCraftKey, getRadio(),
-                RadioConfig.fieldRadio_recipe_basic_shape, RadioConfig.fieldRadio_recipe_basic_ingredients));
+                    RadioConfig.fieldRadio_recipe_basic_shape, RadioConfig.fieldRadio_recipe_basic_ingredients));
 
         //retuning
         if(RadioConfig.fieldRadio_recipe_retune_enabled)
@@ -52,9 +52,9 @@ public class FieldRadio {
             ingredients.forEach(i -> {
                 //special case RADIO
                 if(i.equals("RADIO"))
-                    recipe.addIngredient(RadioMaterial);
+                    recipe.addIngredient(RadioConfig.fieldRadio_baseMaterial);
 
-                //special case DYE for frequency
+                    //special case DYE for frequency
                 else if (i.equals("DYE"))
                     recipe.addIngredient(new RecipeChoice.MaterialChoice(MaterialTags.DYES));
 
@@ -84,18 +84,18 @@ public class FieldRadio {
     public static ItemStack getRadio()
     {
         //creates Item (off of music disk because of minimal use cases)
-        final ItemStack radio = ItemStack.of(RadioMaterial);
+        final ItemStack radio = ItemStack.of(RadioConfig.fieldRadio_baseMaterial);
 
         //sets Item visuals
-        radio.setData(DataComponentTypes.ITEM_NAME, Component.text("Field Radio"));
+        radio.setData(DataComponentTypes.ITEM_NAME, Component.text("Field Radio", NamedTextColor.YELLOW));
         radio.setData(DataComponentTypes.ITEM_MODEL, radioModelKey);
 
         //sets Item Component Data
         radio.setData(DataComponentTypes.CONSUMABLE, Consumable.consumable()
-                        .consumeSeconds(Float.MAX_VALUE)
-                        .animation(ItemUseAnimation.TOOT_HORN)
-                        .hasConsumeParticles(false)
-                        .build());
+                .consumeSeconds(Float.MAX_VALUE)
+                .animation(ItemUseAnimation.TOOT_HORN)
+                .hasConsumeParticles(false)
+                .build());
 
         radio.editMeta(meta -> {
             meta.getUseCooldown().setCooldownSeconds(5f);
@@ -144,7 +144,7 @@ public class FieldRadio {
     public static boolean isRadio(ItemStack item)
     {
         //exit this IMEADITEALY if not related to radio through the fastest possible method
-        if(item.getType() != RadioMaterial)
+        if(item.getType() != RadioConfig.fieldRadio_baseMaterial)
             return false;
 
         return item.getPersistentDataContainer().has(radioIdentifierKey, PersistentDataType.STRING);

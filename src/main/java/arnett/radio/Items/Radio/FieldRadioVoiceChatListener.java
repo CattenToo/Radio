@@ -50,16 +50,12 @@ public class FieldRadioVoiceChatListener implements Listener {
                     }, 1);
             }
 
-            Radio.logger.info("Picked Up Radio <" + FrequencyManager.getFrequency(e.getNewItemStack()) + "> by " + e.getPlayer().getName());
-
             //radio added to inventory
             //set player to listen to frequency
             FieldRadioVoiceChat.addToFrequency(FrequencyManager.getFrequency(e.getNewItemStack()), e.getPlayer().getUniqueId());
         }
         if(FieldRadio.isRadio(e.getOldItemStack()))
         {
-
-            Radio.logger.info("Removed Radio <" + FrequencyManager.getFrequency(e.getOldItemStack()) + "> by " + e.getPlayer().getName());
 
             //radio removed from inventory
             //remove player from listen to frequency
@@ -119,51 +115,30 @@ public class FieldRadioVoiceChatListener implements Listener {
             }
         }
 
+        byte[] audioData = e.getPacket().getOpusEncodedData();
 
-        String frequency = FrequencyManager.getFrequency(FieldRadio.getHeldRadio(player).get());
-
-        //gets voice chat api for connections
-        VoicechatServerApi serverVC = e.getVoicechat();
-
-        //send to speakers
-        Speaker.sendMicrophonePacketToFrequency(e, frequency);
-
-        //sent to players with field radios
-
-        // worst case scenario is someone is filling up a frequency with like 41 radios
-        Set<UUID> processed = new HashSet<>((int)Math.sqrt(FieldRadioVoiceChat.frequencyListeners.get(frequency).size()));
-
-        //so player doesn't hear themselves
-        processed.add(player.getUniqueId());
-
-        for(UUID id : FieldRadioVoiceChat.frequencyListeners.get(frequency))
+        //apply the filter if needed
+        if(RadioConfig.fieldRadio_audioFilter_enabled)
         {
-            //skip if already added to set (they've already been sent the packet)
-            if(!processed.add(id))
-            {
-                continue;
-            }
+            short[] filteredAudio = RadioVoiceChat.applyFilter(
+                    RadioVoiceChat.getDecoder(player.getUniqueId()).decode(audioData),
+                    RadioConfig.fieldRadio_audioFilter_LPAlpha,
+                    RadioConfig.fieldRadio_audioFilter_HPAlpha,
+                    RadioConfig.fieldRadio_audioFilter_noiseFloor,
+                    RadioConfig.fieldRadio_audioFilter_crackleChance
+            );
 
-            //grab connection
-            VoicechatConnection connection = serverVC.getConnectionOf(id);
-
-            //make sure connection is there
-            if(connection == null || !connection.isConnected())
-                continue;
-
-            byte[] audioData = e.getPacket().getOpusEncodedData();
-
-            if(RadioConfig.fieldRadio_audioFilter_enabled)
-            {
-                //modify packet
-                audioData = RadioVoiceChat.getEncoder(player.getUniqueId()).encode(FieldRadioVoiceChat.applyFilter(RadioVoiceChat.getDecoder(player.getUniqueId()).decode(audioData)));
-            }
-
-            //send audio
-            serverVC.sendStaticSoundPacketTo(connection, e.getPacket().staticSoundPacketBuilder().opusEncodedData(audioData).build());
+            //modify packet
+            audioData = RadioVoiceChat.getEncoder(player.getUniqueId()).encode(filteredAudio);
         }
 
-
+        //send it out
+        FrequencyManager.sendToFrequency(
+                player.getUniqueId(),
+                audioData,
+                FrequencyManager.getFrequency(FieldRadio.getHeldRadio(player).get()),
+                e.getPacket()
+        );
     }
 
 
