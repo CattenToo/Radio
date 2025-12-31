@@ -152,12 +152,11 @@ microphone:
 
   # applied when talking through microphone
   audio-filter:
-    enabled: true # if this is too intensive on the server you can disable it with this
-    volume: 1.6  # Gain
-    LP-alpha: 0.6  # Lower = more muffled
-    HP-alpha: 0.9 # Higher = less bass
-    noise-floor: 40  # Constant hiss volume
-    crackle-chance: 3000 # 1 in 3000 chance per sample
+    enabled: false # if this is too intensive on the server you can disable it with this
+    LP-alpha: 0.8  # Lower = more muffled
+    HP-alpha: 0.8 # Higher = less bass
+    noise-floor: 0  # Constant hiss volume
+    crackle-chance: 999 # 1 in 3000 chance per sample
 
   recipe:
     basic:

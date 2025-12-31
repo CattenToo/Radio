@@ -22,7 +22,6 @@ public class RadioConfig {
 
     //  Audio Filter
     public static boolean fieldRadio_audioFilter_enabled;
-    public static double fieldRadio_audioFilter_volume;
     public static double fieldRadio_audioFilter_LPAlpha;
     public static double fieldRadio_audioFilter_HPAlpha;
     public static int fieldRadio_audioFilter_noiseFloor;
@@ -47,7 +46,6 @@ public class RadioConfig {
 
     //  Audio Filter
     public static boolean speaker_audioFilter_enabled;
-    public static double speaker_audioFilter_volume;
     public static double speaker_audioFilter_LPAlpha;
     public static double speaker_audioFilter_HPAlpha;
     public static int speaker_audioFilter_noiseFloor;
@@ -75,7 +73,6 @@ public class RadioConfig {
 
         //  Audio Filter
         public static boolean microphone_audioFilter_enabled;
-        public static double microphone_audioFilter_volume;
         public static double microphone_audioFilter_LPAlpha;
         public static double microphone_audioFilter_HPAlpha;
         public static int microphone_audioFilter_noiseFloor;
@@ -106,7 +103,6 @@ public class RadioConfig {
          //field radio
              //  Audio Filter
              fieldRadio_audioFilter_enabled = Radio.config.getBoolean("fieldradio.audio-filter.enabled");
-             fieldRadio_audioFilter_volume = Radio.config.getDouble("fieldradio.audio-filter.volume");
              fieldRadio_audioFilter_LPAlpha = Radio.config.getDouble("fieldradio.audio-filter.LP-alpha");
              fieldRadio_audioFilter_HPAlpha = Radio.config.getDouble("fieldradio.audio-filter.HP-alpha");
              fieldRadio_audioFilter_noiseFloor = Radio.config.getInt("fieldradio.audio-filter.noise-floor");
@@ -135,7 +131,6 @@ public class RadioConfig {
 
             //  Audio Filter
             speaker_audioFilter_enabled = Radio.config.getBoolean("speaker.audio-filter.enabled");
-            speaker_audioFilter_volume = Radio.config.getDouble("speaker.audio-filter.volume");
             speaker_audioFilter_LPAlpha = Radio.config.getDouble("speaker.audio-filter.LP-alpha");
             speaker_audioFilter_HPAlpha = Radio.config.getDouble("speaker.audio-filter.HP-alpha");
             speaker_audioFilter_noiseFloor = Radio.config.getInt("speaker.audio-filter.noise-floor");
@@ -172,7 +167,6 @@ public class RadioConfig {
 
             //audio filter
             microphone_audioFilter_enabled = Radio.config.getBoolean("microphone.audio-filter.enabled");
-            microphone_audioFilter_volume = Radio.config.getDouble("microphone.audio-filter.volume");
             microphone_audioFilter_LPAlpha = Radio.config.getDouble("microphone.audio-filter.LP-alpha");
             microphone_audioFilter_HPAlpha = Radio.config.getDouble("microphone.audio-filter.HP-alpha");
             microphone_audioFilter_noiseFloor = Radio.config.getInt("microphone.audio-filter.noise-floor");

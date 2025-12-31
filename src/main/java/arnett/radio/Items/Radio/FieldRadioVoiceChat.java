@@ -138,6 +138,10 @@ public class FieldRadioVoiceChat {
 
     public static void sendPacketToFrequency(UUID sender, byte[] audioData, String frequency, MicrophonePacket packet)
     {
+        //do these radios exist
+        if (FieldRadioVoiceChat.frequencyListeners.get(frequency) == null)
+            return;
+
         // hash map of players already computed so we don't waste time with doing it again
         Set<UUID> processed = new HashSet<>((int)Math.sqrt(FieldRadioVoiceChat.frequencyListeners.get(frequency).size()));
 

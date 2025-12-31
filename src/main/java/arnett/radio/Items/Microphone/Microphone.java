@@ -15,11 +15,13 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.RecipeChoice;
 import org.bukkit.inventory.ShapelessRecipe;
 import org.bukkit.persistence.PersistentDataType;
+import org.checkerframework.checker.units.qual.A;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,7 +40,9 @@ public class Microphone {
     public static final NamespacedKey microphoneWallDisplayModelKey = new NamespacedKey("radio", "microphone_wall_display");
 
     //this list should be relativity small since it only track player attached to microphones
-    public static HashMap<UUID, Entity> attachedPlayers = new HashMap<>();
+    //I know map in map can be done with record but for optimization’s sake, it's like this
+    public static HashMap<Player, HashMap<String, Entity>> attachedPlayers = new HashMap<>();
+
     static HashMap<String, BossBar> indicatorBarDisplays = new HashMap<>();
 
     public static ArrayList<Recipe> getRecipes()
@@ -137,13 +141,13 @@ public class Microphone {
     }
 
 
-    public static void attachPlayerToMicrophone(UUID player, Entity mic)
+    public static void attachPlayerToMicrophone(Player player, String frequency, Entity mic)
     {
-        if (attachedPlayers.containsKey(player))
-            //already attached
+
+        if (attachedPlayers.containsKey(player) && attachedPlayers.get(player).containsKey(frequency))
+            //already attached to this frequency
             return;
 
-        String frequency = FrequencyManager.getFrequency(mic);
 
         //get the bar or create it if it is new
         BossBar indicator = indicatorBarDisplays.computeIfAbsent(
@@ -160,28 +164,62 @@ public class Microphone {
 
         try {
             // show the bar
-            Bukkit.getPlayer(player).showBossBar(indicator);
+            player.showBossBar(indicator);
         }
         catch (Exception ignored){};
 
-        attachedPlayers.put(player, mic);
+        //add to attachments, will replace if already there and create a new entry if player isn't yet present
+        attachedPlayers.computeIfAbsent(player, (p) -> new HashMap<>())
+                .put(frequency, mic);
     }
 
-    public static void detachPlayerFromMicrophone(UUID player)
+    public static void movePlayerToMicrophone(Player player, String frequency, Entity mic)
     {
+        if (!(attachedPlayers.containsKey(player)))
+            //player isn't even attached
+            return;
+
+        //overwrite attachment
+        attachedPlayers.get(player).put(frequency, mic);
+    }
+
+    public static void detachPlayerFromMicrophone(Player player, String frequency)
+    {
+        //hide the boss bar if possible
         try {
-            Bukkit.getPlayer(player).hideBossBar(indicatorBarDisplays.get(attachedPlayers.get(player)));
+            player.hideBossBar(indicatorBarDisplays.get(frequency));
         }
         catch (Exception ignore){
         }
 
-        attachedPlayers.remove(player);
+        //remove the player if they're in the list
+        if(attachedPlayers.containsKey(player))
+        {
+            //remove the mic
+            attachedPlayers.get(player).remove(frequency);
+
+            //remove the player if they're no longer attached to anything
+            if(attachedPlayers.get(player).isEmpty())
+                attachedPlayers.remove(player);
+        }
     }
 
-    public static void removeMicrophoneAttachments(Entity mic) {
+    public static void removeMicrophoneAttachments(String frequency, Entity mic) {
+        //check all entries to see if they are of this mic, if so remove them
+        //normally this would be bad, but it's not something called often so it should be fine
         attachedPlayers.entrySet().removeIf((entry) ->{
-            Bukkit.getPlayer(entry.getKey()).hideBossBar(indicatorBarDisplays.get(FrequencyManager.getFrequency(mic)));
-            return entry.getValue().equals(mic);
+
+            entry.getValue().entrySet().removeIf((microphoneEntry) -> {
+                //player is attached to this mic
+
+                //hide the boss bar indicator
+                entry.getKey().hideBossBar(indicatorBarDisplays.get(frequency));
+
+                //remove them from this frequency
+                return microphoneEntry.getValue().equals(mic);
+            });
+
+            return entry.getValue().isEmpty();
         });
     }
 }

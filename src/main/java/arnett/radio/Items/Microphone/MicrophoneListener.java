@@ -114,20 +114,32 @@ public class MicrophoneListener implements Listener {
     @EventHandler
     public void onPlayerEntityInteraction(PlayerInteractEntityEvent e)
     {
+        // did they interact with a microphone
         if(!e.getRightClicked().getPersistentDataContainer().has(Microphone.microphoneIdentifierKey))
             return;
 
-        //are they attached to a mic already
-        if(Microphone.attachedPlayers.containsKey(e.getPlayer().getUniqueId()))
+        String frequency = FrequencyManager.getFrequency(e.getRightClicked());
+
+        // are they attached to this frequency already
+        if(Microphone.attachedPlayers.containsKey(e.getPlayer()) &&
+                Microphone.attachedPlayers.get(e.getPlayer()).containsKey(frequency))
         {
-            //remove them
-            Microphone.detachPlayerFromMicrophone(e.getPlayer().getUniqueId());
-            return;
+            // is it this mic or another one
+            if(Microphone.attachedPlayers.get(e.getPlayer()).get(frequency).equals(e.getRightClicked()))
+            {
+                // this mic so remove them
+                Microphone.detachPlayerFromMicrophone(e.getPlayer(), frequency);
+                return;
+            }
+            else {
+                // they are attached to a different mic so just move them to this one
+                Microphone.movePlayerToMicrophone(e.getPlayer(), frequency, e.getRightClicked());
+            }
         }
 
         //it was a mic that was interacted
         //add the player to the mic list
-        Microphone.attachPlayerToMicrophone(e.getPlayer().getUniqueId(), e.getRightClicked());
+        Microphone.attachPlayerToMicrophone(e.getPlayer(), frequency, e.getRightClicked());
     }
 
     @EventHandler
@@ -144,8 +156,11 @@ public class MicrophoneListener implements Listener {
         }
 
         //well it should be removed if it was one of the above, so
+
+        String frequency = FrequencyManager.getFrequency(e.getEntity());
+
         //remove all attachments
-        Microphone.removeMicrophoneAttachments(e.getEntity());
+        Microphone.removeMicrophoneAttachments(frequency, e.getEntity());
 
         //and delete the linked display
         String stringLinkedId = e.getEntity().getPersistentDataContainer().get(CustomItemManager.entityLinkKey, PersistentDataType.STRING);
@@ -181,42 +196,49 @@ public class MicrophoneListener implements Listener {
 
     public static void onMicrophone(MicrophonePacketEvent e)
     {
+        //makes sure it's a player, which it obviously is, but mostly cast it to a bukkit player
+        if (!(e.getSenderConnection().getPlayer().getPlayer() instanceof Player player))
+            return;
 
         //is the player attached
-        if(!Microphone.attachedPlayers.containsKey(e.getSenderConnection().getPlayer().getUuid()))
+        if(!Microphone.attachedPlayers.containsKey(player))
             return;
+
+
 
         UUID playerId = e.getSenderConnection().getPlayer().getUuid();
 
-        //get frequency
-        String frequency = FrequencyManager.getFrequency(Microphone.attachedPlayers.get(playerId));
+        //send it out to all attached
+        //this is a minimal enough case where I think it's okay to loop through each entry
+        Microphone.attachedPlayers.get(player).forEach((frequency, mic) -> {
 
-        // get the data
-        byte[] audioData = e.getPacket().getOpusEncodedData();
+            // get the data
+            byte[] audioData = e.getPacket().getOpusEncodedData();
 
-        //apply the filter if needed
-        if(RadioConfig.fieldRadio_audioFilter_enabled)
-        {
-            short[] filteredAudio = RadioVoiceChat.applyFilter(
-                    RadioVoiceChat.getDecoder(playerId).decode(audioData),
-                    RadioConfig.microphone_audioFilter_LPAlpha,
-                    RadioConfig.microphone_audioFilter_HPAlpha,
-                    RadioConfig.microphone_audioFilter_noiseFloor,
-                    RadioConfig.microphone_audioFilter_crackleChance
+            //apply the filter if needed
+            if(RadioConfig.microphone_audioFilter_enabled)
+            {
+                short[] filteredAudio = RadioVoiceChat.applyFilter(
+                        RadioVoiceChat.getDecoder(playerId).decode(audioData),
+                        RadioConfig.microphone_audioFilter_LPAlpha,
+                        RadioConfig.microphone_audioFilter_HPAlpha,
+                        RadioConfig.microphone_audioFilter_noiseFloor,
+                        RadioConfig.microphone_audioFilter_crackleChance
+                );
+
+                //modify packet
+                audioData = RadioVoiceChat.getEncoder(playerId).encode(filteredAudio);
+            }
+
+
+            //send it out
+            FrequencyManager.sendToFrequency(
+                    playerId,
+                    audioData,
+                    frequency,
+                    e.getPacket()
             );
-
-            //modify packet
-            audioData = RadioVoiceChat.getEncoder(playerId).encode(filteredAudio);
-        }
-
-
-        //send it out
-        FrequencyManager.sendToFrequency(
-                playerId,
-                audioData,
-                frequency,
-                e.getPacket()
-        );
+        });
     }
 
     //todo test
