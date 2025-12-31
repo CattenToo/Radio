@@ -1,6 +1,6 @@
 {
   "model":{
     "type": "minecraft:model",
-    "model": "radio:item/speaker_ground_display"
+    "model": "radio:item/microphone_ground_display"
   }
 } 

@@ -1,6 +1,7 @@
 package arnett.radio.Items.Radio;
 
 import arnett.radio.FrequencyManager;
+import arnett.radio.Items.Microphone.Microphone;
 import arnett.radio.Items.Speaker.Speaker;
 import arnett.radio.Radio;
 import arnett.radio.RadioConfig;
@@ -94,6 +95,7 @@ public class FieldRadioVoiceChatListener implements Listener {
         if(!FieldRadio.isHoldingRadio(player))
             return;
 
+
         //grace period so voice doesn't cut off at end
         if(!player.hasActiveItem() && !FieldRadioVoiceChat.playersInGracePeroid.containsKey(player.getUniqueId()))
         {
@@ -114,6 +116,12 @@ public class FieldRadioVoiceChatListener implements Listener {
                 return;
             }
         }
+
+        String frequency = FrequencyManager.getFrequency(FieldRadio.getHeldRadio(player).get());
+
+        //are they already speaking through this frequency with a mic
+        if(Microphone.isAttached(player, frequency))
+            return;
 
         byte[] audioData = e.getPacket().getOpusEncodedData();
 
@@ -136,7 +144,7 @@ public class FieldRadioVoiceChatListener implements Listener {
         FrequencyManager.sendToFrequency(
                 player.getUniqueId(),
                 audioData,
-                FrequencyManager.getFrequency(FieldRadio.getHeldRadio(player).get()),
+                frequency,
                 e.getPacket()
         );
     }

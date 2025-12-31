@@ -57,16 +57,16 @@ public class RadioVoiceChat implements VoicechatPlugin {
         return decoder;
     }
 
-    public static OpusEncoder removeDecoder(UUID id)
+    public static void removeDecoder(UUID id)
     {
         encoders.get(id).close();
-        return encoders.remove(id);
+        encoders.remove(id);
     }
 
-    public static OpusDecoder removeEncoder(UUID id)
+    public static void removeEncoder(UUID id)
     {
         decoders.get(id).close();
-        return decoders.remove(id);
+        decoders.remove(id);
     }
 
     @Override

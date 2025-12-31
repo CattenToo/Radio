@@ -237,14 +237,18 @@ public class Speaker {
     public static void sendMicrophonePacketToFrequency(UUID sender, byte[] encodedAudio, String frequency)
     {
         //send the packet out to speakers
-        activeSpeakers.forEach((session, map) -> {
-            //if they are the correct frequency
-            if(session.frequency().equals(frequency))
-            {
-                //get the channel belonging to the player, or create one if it isn't present
-                map.computeIfAbsent(sender, (id) -> createAudioChannelForSession(session)).send(encodedAudio);
-            }
-        });
+        try {
+            activeSpeakers.forEach((session, map) -> {
+                //if they are the correct frequency
+                if(session.frequency().equals(frequency))
+                {
+                    //get the channel belonging to the player, or create one if it isn't present
+                    map.computeIfAbsent(sender, (id) -> createAudioChannelForSession(session)).send(encodedAudio);
+                }
+            });
+        }
+        //if something was changed while iterating through
+        catch (ConcurrentModificationException ignored){};
 
     }
 

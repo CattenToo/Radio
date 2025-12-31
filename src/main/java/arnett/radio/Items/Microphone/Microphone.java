@@ -222,4 +222,9 @@ public class Microphone {
             return entry.getValue().isEmpty();
         });
     }
+
+    public static boolean isAttached(Player player, String frequency)
+    {
+        return attachedPlayers.containsKey(player) && attachedPlayers.get(player).containsKey(frequency);
+    }
 }

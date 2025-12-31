@@ -48,19 +48,20 @@ public class MicrophoneListener implements Listener {
         boolean againstWall = !(face == BlockFace.DOWN || face == BlockFace.UP || face == BlockFace.SELF);
         NamespacedKey displayModel = againstWall ? Microphone.microphoneWallDisplayModelKey : Microphone.microphoneDisplayModelKey;
 
-        //set the rotation
-        placeSpot.setYaw(switch (face){
-            case NORTH -> 0f;
-            case EAST -> 90f;
-            case SOUTH -> 180f;
-            case WEST -> 270f;
-            default -> 0f;
-        });
-
         Vector hitboxOffset = new Vector(0, -.5, 0);
 
         if(againstWall)
         {
+            //set the rotation according to the block face placed on
+            placeSpot.setYaw(switch (face){
+                case NORTH -> 0f;
+                case EAST -> 90f;
+                case SOUTH -> 180f;
+                case WEST -> 270f;
+                default -> 0f;
+            });
+
+            // move the hitbox
             switch (face)
             {
                 case NORTH -> hitboxOffset.setZ(-.4f);
@@ -70,6 +71,17 @@ public class MicrophoneListener implements Listener {
             }
 
             hitboxOffset.setY(-.25f);
+        }
+        else
+        {
+            //set the rotation according to player direction
+            placeSpot.setYaw(switch (e.getPlayer().getFacing()){
+                case NORTH -> 0f;
+                case EAST -> 90f;
+                case SOUTH -> 180f;
+                case WEST -> 270f;
+                default -> 0f;
+            });
         }
 
         //create the item display to show the item

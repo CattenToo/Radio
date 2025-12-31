@@ -1,0 +1,20 @@
+{
+  "variants": {
+    "rotation=0":  { "model": "radio:block/speaker_ground", "y": 0 },
+    "rotation=1":  { "model": "radio:block/speaker_ground", "y": 0 },
+    "rotation=2":  { "model": "radio:block/speaker_ground", "y": 0 },
+    "rotation=3":  { "model": "radio:block/speaker_ground", "y": 90 },
+    "rotation=4":  { "model": "radio:block/speaker_ground", "y": 90 },
+    "rotation=5":  { "model": "radio:block/speaker_ground", "y": 90 },
+    "rotation=6":  { "model": "radio:block/speaker_ground", "y": 90 },
+    "rotation=7":  { "model": "radio:block/speaker_ground", "y": 180 },
+    "rotation=8":  { "model": "radio:block/speaker_ground", "y": 180 },
+    "rotation=9":  { "model": "radio:block/speaker_ground", "y": 180 },
+    "rotation=10":  { "model": "radio:block/speaker_ground", "y": 180 },
+    "rotation=11":  { "model": "radio:block/speaker_ground", "y": 270 },
+    "rotation=12":  { "model": "radio:block/speaker_ground", "y": 270 },
+    "rotation=13":  { "model": "radio:block/speaker_ground", "y": 270 },
+    "rotation=14":  { "model": "radio:block/speaker_ground", "y": 270 },
+    "rotation=15":  { "model": "radio:block/speaker_ground", "y": 0 }
+  }
+}
