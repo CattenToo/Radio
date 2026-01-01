@@ -56,7 +56,7 @@ public class FieldRadioListener implements Listener {
 
         //build a new message
         e.renderer((source, sourceDisplayName, message, viewer) ->
-            FrequencyManager.getColoredFrequencyMessage(frequency, source, message));
+                FrequencyManager.getColoredFrequencyMessage(frequency, source, message));
 
     }
 

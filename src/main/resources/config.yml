@@ -33,11 +33,10 @@ fieldradio:
 
   audio-filter:
     enabled: true
-    volume: 1.6  # Gain
-    LP-alpha: .4 # Lower = more muffled
-    HP-alpha: 0.75 # Higher = less bass
-    noise-floor: 35 # Constant hiss volume
-    crackle-chance: 30000 # 1 in 3000 chance per sample
+    LP-alpha: 0.8  # Lower = more muffled
+    HP-alpha: 0.85 # Higher = less bass
+    noise-floor: 75  # Constant hiss volume
+    crackle-chance: 3000 # 1 in 3000 chance per sample
 
   # this is so that the radio doesn't cut out at the end
   # 200000000 is default at what I believe is .2s
@@ -53,8 +52,8 @@ fieldradio:
     basic:
       enabled: true
 
-      # Use 0 for main frequency and numbers 1 - 9 for subfrequencies,
-      # Recommended to have a main frequency and one subfrequency
+      # # Use 0-9 used for frequencies,
+      # Recommended to use 2 frequencies for this
       shape:
         - "C01"
         - "IAI"
@@ -77,34 +76,33 @@ fieldradio:
 
 
 speaker:
-  #hide these in set command
+
   ~/block/entity/: false
 
   # weather the speaker uses a block or an entity
   # this is specifically so that you can have the option to override a head
   # or just use an entity and not override any blocks
-  use-entity: false
-
-  # applied when talking through speaker
-  audio-filter:
-    enabled: true
-    volume: 1.6  # Gain
-    LP-alpha: 0.6  # Lower = more muffled
-    HP-alpha: 0.9 # Higher = less bass
-    noise-floor: 40  # Constant hiss volume
-    crackle-chance: 3000 # 1 in 3000 chance per sample
+  use-entity: true
 
   # cache size for number of stored channels for people speaking on a frequency
   cache-size: 8
 
   sound-range: 32
 
+  audio-filter:
+    enabled: true
+    LP-alpha: 0.6  # Lower = more muffled
+    HP-alpha: 0.9 # Higher = less bass
+    noise-floor: 40  # Constant hiss volume
+    crackle-chance: 3000 # 1 in 3000 chance per sample
+
+
   recipe:
     basic:
       enabled: true
 
-      # Use 0 for main frequency and numbers 1 - 9 for subfrequencies,
-      # Recommended to have only a main frequency
+      # Use 0-9 used for frequencies
+      # Recommended to have only one frequency for this
       shape:
         - "0A0"
         - "IRI"
@@ -136,6 +134,60 @@ speaker:
     # I recommend keeping this as just the wall variant of the head bing used for head-type
     # shouldn't be changing this one in config during server runtime
     wall-head-type: "PIGLIN_WALL_HEAD"
+
+  # used if use-entity is set to true
+  # shouldn't be changing this one in config during server runtime
+  entity:
+    # base material the speaker uses, needs to be one which can be placed
+    base-material: DARK_OAK_BUTTON
+
+    # .5 0 .5 sets it at the regular block placement
+    display-offset:
+      x: 0.5
+      y: 0.5
+      z: 0.5
+
+    interaction-width: .6
+    interaction-height: .6
+
+microphone:
+  #hide these in set command
+  ~/entity/: false
+
+  # range in which it can be used
+  use-range: 3
+
+  # applied when talking through microphone
+  audio-filter:
+    enabled: false # if this is too intensive on the server you can disable it with this
+    LP-alpha: 0.8  # Lower = more muffled
+    HP-alpha: 0.8 # Higher = less bass
+    noise-floor: 0  # Constant hiss volume
+    crackle-chance: 999 # 1 in 3000 chance per sample
+
+  recipe:
+    basic:
+      enabled: true
+
+      # Use 0-9 used for frequencies
+      # Recommended to have only one frequency for this
+      shape:
+        - " 0 "
+        - "IAI"
+        - " D "
+      ingredients:
+        I: "IRON_INGOT"
+        A: "AMETHYST_SHARD"
+        D: "DIAMOND"
+
+    # Resting the frequency of the speaker
+    retune:
+      enabled: true
+
+      # Use SPEAKER for radio and DYE for frequencies
+      ingredients:
+        - "MICROPHONE"
+        - "DYE"
 
   # used if use-entity is set to true
   # shouldn't be changing this one in config during server runtime

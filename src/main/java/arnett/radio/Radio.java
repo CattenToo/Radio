@@ -52,7 +52,7 @@ public final class Radio extends JavaPlugin {
         //registers recipes on reload config btw
 
         //register commands
-        getCommand("fieldradio").setExecutor(new CommandManager(avaliablePlugins));
+        getCommand("radiotools").setExecutor(new CommandManager(avaliablePlugins));
     }
 
     //sets up voice chat dependent things

@@ -37,9 +37,11 @@ public class ListActiveCodersCommand implements SubCommand{
 
         StringBuilder list = new StringBuilder();
 
+        list.append(RadioVoiceChat.encoders.size()).append(": ");
+
         RadioVoiceChat.encoders.forEach((key, value) -> {
             try{
-                list.append(Bukkit.getPlayer(key).getName());
+                list.append(Bukkit.getPlayer(key).getName()).append(", ");
             }
             catch (Exception e)
             {
@@ -49,6 +51,8 @@ public class ListActiveCodersCommand implements SubCommand{
 
         player.sendMessage("Encoders: " + list.toString());
         list.setLength(0);
+
+        list.append(RadioVoiceChat.decoders.size()).append(": ");
 
         RadioVoiceChat.decoders.forEach((key, value) -> {
             try{

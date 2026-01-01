@@ -2,6 +2,7 @@ package arnett.radio;
 
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
+import org.jetbrains.annotations.Nullable;
 import org.bukkit.util.Vector;
 
 import java.util.List;
@@ -19,50 +20,48 @@ public class RadioConfig {
     //field radio
     public static Material fieldRadio_baseMaterial;
 
-        //  Audio Filter
-        public static boolean fieldRadio_audioFilter_enabled;
-        public static double fieldRadio_audioFilter_volume;
-        public static double fieldRadio_audioFilter_LPAlpha;
-        public static double fieldRadio_audioFilter_HPAlpha;
-        public static int fieldRadio_audioFilter_noiseFloor;
-        public static int fieldRadio_audioFilter_crackleChance;
+    //  Audio Filter
+    public static boolean fieldRadio_audioFilter_enabled;
+    public static double fieldRadio_audioFilter_LPAlpha;
+    public static double fieldRadio_audioFilter_HPAlpha;
+    public static int fieldRadio_audioFilter_noiseFloor;
+    public static int fieldRadio_audioFilter_crackleChance;
 
-        // Radio Grace perood
-        public static long fieldRadio_gracePeriod;
+    // Radio Grace perood
+    public static long fieldRadio_gracePeriod;
 
-        // Radio Recipe
-            //basic
-            public static boolean fieldRadio_recipe_basic_enabled;
-            public static List<String> fieldRadio_recipe_basic_shape;
-            public static ConfigurationSection fieldRadio_recipe_basic_ingredients;
+    // Radio Recipe
+    //basic
+    public static boolean fieldRadio_recipe_basic_enabled;
+    public static List<String> fieldRadio_recipe_basic_shape;
+    public static ConfigurationSection fieldRadio_recipe_basic_ingredients;
 
-            public static boolean fieldRadio_recipe_retune_enabled;
-            public static List<String> fieldRadio_recipe_retune_ingredients;
+    public static boolean fieldRadio_recipe_retune_enabled;
+    public static List<String> fieldRadio_recipe_retune_ingredients;
 
     //speaker
     public static boolean speaker_useEntity;
     public static int speaker_cacheSize;
     public static int speaker_soundRange;
 
-        //  Audio Filter
-        public static boolean speaker_audioFilter_enabled;
-        public static double speaker_audioFilter_volume;
-        public static double speaker_audioFilter_LPAlpha;
-        public static double speaker_audioFilter_HPAlpha;
-        public static int speaker_audioFilter_noiseFloor;
-        public static int speaker_audioFilter_crackleChance;
+    //  Audio Filter
+    public static boolean speaker_audioFilter_enabled;
+    public static double speaker_audioFilter_LPAlpha;
+    public static double speaker_audioFilter_HPAlpha;
+    public static int speaker_audioFilter_noiseFloor;
+    public static int speaker_audioFilter_crackleChance;
 
-        // Recipe
-        public static boolean speaker_recipe_basic_enabled;
-        public static List<String> speaker_recipe_basic_shape;
-        public static ConfigurationSection speaker_recipe_basic_ingredients;
+    // Recipe
+    public static boolean speaker_recipe_basic_enabled;
+    public static List<String> speaker_recipe_basic_shape;
+    public static ConfigurationSection speaker_recipe_basic_ingredients;
 
-        public static boolean speaker_recipe_retune_enabled;
-        public static List<String> speaker_recipe_retune_ingredients;
+    public static boolean speaker_recipe_retune_enabled;
+    public static List<String> speaker_recipe_retune_ingredients;
 
-        // block
-        public static Material speaker_block_headType;
-        public static Material speaker_block_wallHeadType;
+    // block
+    public static Material speaker_block_headType;
+    public static Material speaker_block_wallHeadType;
 
         // entity
         public static Material speaker_entity_baseMaterial;
@@ -70,7 +69,29 @@ public class RadioConfig {
         public static float speaker_entity_interactionHeight;
         public static Vector speaker_entity_displayOffset;
 
+    //microphone
+        public static int microphone_squaredUseRange;
 
+        //  Audio Filter
+        public static boolean microphone_audioFilter_enabled;
+        public static double microphone_audioFilter_LPAlpha;
+        public static double microphone_audioFilter_HPAlpha;
+        public static int microphone_audioFilter_noiseFloor;
+        public static int microphone_audioFilter_crackleChance;
+
+        //recipe
+        public static Boolean microphone_recipe_basic_enabled;
+        public static List<String> microphone_recipe_basic_shape;
+        public static ConfigurationSection microphone_recipe_basic_ingredients;
+
+        public static boolean microphone_recipe_retune_enabled;
+        public static List<String> microphone_recipe_retune_ingredients;
+
+        // entity
+        public static Material microphone_entity_baseMaterial;
+        public static float microphone_entity_interactionWidth;
+        public static float microphone_entity_interactionHeight;
+        public static Vector microphone_entity_displayOffset;
 
     public static void refresh()
     {
@@ -85,18 +106,16 @@ public class RadioConfig {
 
              //  Audio Filter
              fieldRadio_audioFilter_enabled = Radio.config.getBoolean("fieldradio.audio-filter.enabled");
-             fieldRadio_audioFilter_volume = Radio.config.getDouble("fieldradio.audio-filter.volume");
              fieldRadio_audioFilter_LPAlpha = Radio.config.getDouble("fieldradio.audio-filter.LP-alpha");
              fieldRadio_audioFilter_HPAlpha = Radio.config.getDouble("fieldradio.audio-filter.HP-alpha");
              fieldRadio_audioFilter_noiseFloor = Radio.config.getInt("fieldradio.audio-filter.noise-floor");
              fieldRadio_audioFilter_crackleChance = Radio.config.getInt("fieldradio.audio-filter.crackle-chance");
 
-         // Radio Grace period
+         // Radio Grace perood
          fieldRadio_gracePeriod = Radio.config.getLong("fieldradio.grace-period");
 
          //base material
          fieldRadio_baseMaterial = Material.matchMaterial(Radio.config.getString("fieldradio.base-material"));
-
              // Radio Recipe
                 //basic
                 fieldRadio_recipe_basic_enabled = Radio.config.getBoolean("fieldradio.recipe.basic.enabled");
@@ -113,10 +132,8 @@ public class RadioConfig {
         speaker_soundRange = Radio.config.getInt("speaker.sound-range");
         speaker_cacheSize = Radio.config.getInt("speaker.cache-size");
 
-
             //  Audio Filter
             speaker_audioFilter_enabled = Radio.config.getBoolean("speaker.audio-filter.enabled");
-            speaker_audioFilter_volume = Radio.config.getDouble("speaker.audio-filter.volume");
             speaker_audioFilter_LPAlpha = Radio.config.getDouble("speaker.audio-filter.LP-alpha");
             speaker_audioFilter_HPAlpha = Radio.config.getDouble("speaker.audio-filter.HP-alpha");
             speaker_audioFilter_noiseFloor = Radio.config.getInt("speaker.audio-filter.noise-floor");
@@ -142,11 +159,45 @@ public class RadioConfig {
             speaker_entity_baseMaterial = Material.matchMaterial(Radio.config.getString("speaker.entity.base-material"));
             speaker_entity_interactionWidth = (float)Radio.config.getDouble("speaker.entity.interaction-width");
             speaker_entity_interactionHeight = (float)Radio.config.getDouble("speaker.entity.interaction-height");
-            ConfigurationSection displayOffset = Radio.config.getConfigurationSection("speaker.entity.display-offset");
+            ConfigurationSection speakerDisplayOffset = Radio.config.getConfigurationSection("speaker.entity.display-offset");
             speaker_entity_displayOffset = new Vector(
-                    (float)displayOffset.getDouble("x"),
-                    (float)displayOffset.getDouble("y"),
-                    (float)displayOffset.getDouble("z")
+                    (float)speakerDisplayOffset.getDouble("x"),
+                    (float)speakerDisplayOffset.getDouble("y"),
+                    (float)speakerDisplayOffset.getDouble("z")
+            );
+
+        // Microphone Settings
+
+            //use range
+            microphone_squaredUseRange = (int)Math.pow(Radio.config.getInt("microphone.use-range"), 2);
+
+            //audio filter
+            microphone_audioFilter_enabled = Radio.config.getBoolean("microphone.audio-filter.enabled");
+            microphone_audioFilter_LPAlpha = Radio.config.getDouble("microphone.audio-filter.LP-alpha");
+            microphone_audioFilter_HPAlpha = Radio.config.getDouble("microphone.audio-filter.HP-alpha");
+            microphone_audioFilter_noiseFloor = Radio.config.getInt("microphone.audio-filter.noise-floor");
+            microphone_audioFilter_crackleChance = Radio.config.getInt("microphone.audio-filter.crackle-chance");
+
+            // Recipe
+                // basic
+                microphone_recipe_basic_enabled = Radio.config.getBoolean("microphone.recipe.basic.enabled");
+                microphone_recipe_basic_shape = Radio.config.getStringList("microphone.recipe.basic.shape");
+                microphone_recipe_basic_ingredients = Radio.config.getConfigurationSection("microphone.recipe.basic.ingredients");
+
+                // Retune
+                microphone_recipe_retune_enabled = Radio.config.getBoolean("microphone.recipe.retune.enabled");
+                microphone_recipe_retune_ingredients = Radio.config.getStringList("microphone.recipe.retune.ingredients");
+
+            // Entity Settings
+            microphone_entity_baseMaterial = Material.matchMaterial(Radio.config.getString("microphone.entity.base-material"));
+            microphone_entity_interactionWidth = (float)Radio.config.getDouble("microphone.entity.interaction-width");
+            microphone_entity_interactionHeight = (float)Radio.config.getDouble("microphone.entity.interaction-height");
+
+            ConfigurationSection microphoneDisplayOffset = Radio.config.getConfigurationSection("speaker.entity.display-offset");
+            microphone_entity_displayOffset = new Vector(
+                    (float)microphoneDisplayOffset.getDouble("x"),
+                    (float)microphoneDisplayOffset.getDouble("y"),
+                    (float)microphoneDisplayOffset.getDouble("z")
             );
 
     }

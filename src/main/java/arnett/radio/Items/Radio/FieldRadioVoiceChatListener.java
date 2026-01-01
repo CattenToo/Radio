@@ -1,6 +1,7 @@
 package arnett.radio.Items.Radio;
 
 import arnett.radio.FrequencyManager;
+import arnett.radio.Items.Microphone.Microphone;
 import arnett.radio.Items.Speaker.Speaker;
 import arnett.radio.Radio;
 import arnett.radio.RadioConfig;
@@ -94,6 +95,7 @@ public class FieldRadioVoiceChatListener implements Listener {
         if(!FieldRadio.isHoldingRadio(player))
             return;
 
+
         //grace period so voice doesn't cut off at end
         if(!player.hasActiveItem() && !FieldRadioVoiceChat.playersInGracePeroid.containsKey(player.getUniqueId()))
         {
@@ -115,46 +117,35 @@ public class FieldRadioVoiceChatListener implements Listener {
             }
         }
 
-
         String frequency = FrequencyManager.getFrequency(FieldRadio.getHeldRadio(player).get());
 
-        //gets voice chat api for connections
-        VoicechatServerApi serverVC = e.getVoicechat();
+        //are they already speaking through this frequency with a mic
+        if(Microphone.isAttached(player, frequency))
+            return;
 
         byte[] audioData = e.getPacket().getOpusEncodedData();
 
         //apply the filter if needed
         if(RadioConfig.fieldRadio_audioFilter_enabled)
         {
+            short[] filteredAudio = RadioVoiceChat.applyFilter(
+                    RadioVoiceChat.getDecoder(player.getUniqueId()).decode(audioData),
+                    RadioConfig.fieldRadio_audioFilter_LPAlpha,
+                    RadioConfig.fieldRadio_audioFilter_HPAlpha,
+                    RadioConfig.fieldRadio_audioFilter_noiseFloor,
+                    RadioConfig.fieldRadio_audioFilter_crackleChance
+            );
+
             //modify packet
-            audioData = RadioVoiceChat.getEncoder(player.getUniqueId()).encode(FieldRadioVoiceChat.applyFilter(RadioVoiceChat.getDecoder(player.getUniqueId()).decode(audioData)));
+            audioData = RadioVoiceChat.getEncoder(player.getUniqueId()).encode(filteredAudio);
         }
 
-        //send to speakers
-        Speaker.sendMicrophonePacketToFrequency(player.getUniqueId(), audioData, frequency);
-
-        // hash map of players already computed so we don't waste time with doing it again
-        Set<UUID> processed = new HashSet<>((int)Math.sqrt(FieldRadioVoiceChat.frequencyListeners.get(frequency).size()));
-
-        //so player doesn't hear themselves
-        processed.add(player.getUniqueId());
-
-        //sending to field radios
-        for(UUID id : FieldRadioVoiceChat.frequencyListeners.get(frequency))
-        {
-            //skip if already added to set (they've already been sent the packet)
-            if(!processed.add(id))
-                continue;
-
-            //grab connection
-            VoicechatConnection connection = serverVC.getConnectionOf(id);
-
-            //make sure connection is there
-            if(connection == null || !connection.isConnected())
-                continue;
-
-            //send audio
-            serverVC.sendStaticSoundPacketTo(connection, e.getPacket().staticSoundPacketBuilder().opusEncodedData(audioData).build());
-        }
+        //send it out
+        FrequencyManager.sendToFrequency(
+                player.getUniqueId(),
+                audioData,
+                frequency,
+                e.getPacket()
+        );
     }
 }

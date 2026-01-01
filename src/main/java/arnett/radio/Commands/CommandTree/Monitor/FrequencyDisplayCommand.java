@@ -1,8 +1,8 @@
 package arnett.radio.Commands.CommandTree.Monitor;
 
 import arnett.radio.Commands.SubCommand;
+import arnett.radio.Items.Microphone.Microphone;
 import arnett.radio.Items.Speaker.Speaker;
-import arnett.radio.Radio;
 import arnett.radio.RadioConfig;
 import arnett.radio.FrequencyManager;
 import arnett.radio.Items.Radio.FieldRadioVoiceChat;
@@ -12,6 +12,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 // todo THIS COMMAND WILL BE REWORKED LATER
 
@@ -83,25 +84,21 @@ public class FrequencyDisplayCommand implements SubCommand {
 
         //speakers
         {
-            Speaker.activeSpeakers.forEach((session, map) -> {
-                //if the frequency matches
-                if(session.frequency().startsWith(argFrequency.toString()))
-                    receiverList.append(session.location().getWorld().getName())
-                            .append(" ")
-                            .append(session.location().x())
-                            .append(" ")
-                            .append(session.location().y())
-                            .append(" ")
-                            .append(session.location().z())
-                            .append(" Speaker ")
-                            .append(map.size())
-                            .append(", ");
+            //display
+                player.sendMessage(Component.text("Speakers: " + Speaker.activeSpeakers.size()));
+        }
+
+        //microphones
+        {
+            //total attachments
+            AtomicInteger total = new AtomicInteger();
+
+            Microphone.attachedPlayers.forEach((ignored, connection) -> {
+                total.addAndGet(connection.size());
             });
 
             //display
-            if(!receiverList.isEmpty())
-                player.sendMessage(Component.text("Speakers: ")
-                    .append(Component.text(receiverList.toString())));
+            player.sendMessage(Component.text("Microphone Connections: " + total));
         }
 
         player.sendMessage(Component.text("Search Complete").decorate(TextDecoration.BOLD));

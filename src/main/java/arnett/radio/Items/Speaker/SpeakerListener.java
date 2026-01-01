@@ -1,24 +1,22 @@
 package arnett.radio.Items.Speaker;
 
 import arnett.radio.FrequencyManager;
+import arnett.radio.Items.CustomItemManager;
 import arnett.radio.Items.Radio.FieldRadio;
 import arnett.radio.Items.Radio.FieldRadioVoiceChat;
 import arnett.radio.Radio;
 import arnett.radio.RadioConfig;
 import arnett.radio.RadioVoiceChat;
 import com.destroystokyo.paper.event.block.BlockDestroyEvent;
-import de.maxhenkel.voicechat.api.Entity;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.event.block.BlockBreakBlockEvent;
+import io.papermc.paper.event.player.PlayerInventorySlotChangeEvent;
 import net.kyori.adventure.text.Component;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Crafter;
-import org.bukkit.entity.Interaction;
-import org.bukkit.entity.ItemDisplay;
-import org.bukkit.entity.Player;
-import org.bukkit.entity.Shulker;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
@@ -26,12 +24,18 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.ItemSpawnEvent;
+import org.bukkit.event.inventory.ClickType;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.event.world.EntitiesLoadEvent;
 import org.bukkit.event.world.EntitiesUnloadEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.util.Vector;
@@ -52,13 +56,7 @@ public class SpeakerListener implements Listener {
             if(!Speaker.isEntitySpeaker(e.getItemInHand()))
                 return;
 
-            String frequency = FrequencyManager.getFrequency(e.getItemInHand());
-
-            //check if this has been tagged with a frequency, if not it's probably just a regular block
-            if(frequency.isEmpty())
-                return;
-
-            onSpeakerEntityPlaced(e, frequency);
+            onSpeakerEntityPlaced(e, FrequencyManager.getFrequency(e.getItemInHand()));
         }
         else {
             //is the block the specified head type
@@ -73,7 +71,6 @@ public class SpeakerListener implements Listener {
 
             onSpeakerBlockPlaced(e, frequency);
         }
-
     }
 
     private void onSpeakerBlockPlaced(BlockPlaceEvent e, String frequency)
@@ -92,6 +89,13 @@ public class SpeakerListener implements Listener {
     {
         //speaker has been placed
 
+        // does it have enough room
+        if(!e.getBlockPlaced().getLocation().add(RadioConfig.speaker_entity_displayOffset).getNearbyEntitiesByType(Interaction.class, .2f).isEmpty())
+        {
+            e.setCancelled(true);
+            return;
+        }
+
         //get the location
         Location placeSpot = e.getBlockPlaced().getLocation().add(RadioConfig.speaker_entity_displayOffset);
 
@@ -101,19 +105,21 @@ public class SpeakerListener implements Listener {
         boolean againstWall = !(face == BlockFace.DOWN || face == BlockFace.UP || face == BlockFace.SELF);
         NamespacedKey displayModel = againstWall ? Speaker.speakerWallDisplayModelKey : Speaker.speakerDisplayModelKey;
 
-        //set the rotation
-        placeSpot.setYaw(switch (face){
-            case NORTH -> 0f;
-            case EAST -> 90f;
-            case SOUTH -> 180f;
-            case WEST -> 270f;
-            default -> 0f;
-        });
 
         Vector hitboxOffset = new Vector(0, -.5, 0);
 
         if(againstWall)
         {
+            //set the rotation according to the block face placed on
+            placeSpot.setYaw(switch (face){
+                case NORTH -> 0f;
+                case EAST -> 90f;
+                case SOUTH -> 180f;
+                case WEST -> 270f;
+                default -> 0f;
+            });
+
+            // move the hitbox
             switch (face)
             {
                 case NORTH -> hitboxOffset.setZ(-.4f);
@@ -123,6 +129,17 @@ public class SpeakerListener implements Listener {
             }
 
             hitboxOffset.setY(-.25f);
+        }
+        else
+        {
+            //set the rotation according to player direction
+            placeSpot.setYaw(switch (e.getPlayer().getFacing()){
+                case NORTH -> 0f;
+                case EAST -> 90f;
+                case SOUTH -> 180f;
+                case WEST -> 270f;
+                default -> 0f;
+            });
         }
 
         //create the item display to show the item
@@ -137,7 +154,6 @@ public class SpeakerListener implements Listener {
 
         //create the hitbox so it can be interacted with
         //this is going to be the main entity
-        // using Shulker because it's the most versatile, although if there are a lot it could be a bit of an issue
         Interaction hitbox = placeSpot.getWorld().spawn(placeSpot.add(hitboxOffset), Interaction.class, box ->{
 
             //set size
@@ -146,7 +162,7 @@ public class SpeakerListener implements Listener {
 
 
             //tag it with the UUID of the display for when it needs to be removed
-            box.getPersistentDataContainer().set(Speaker.speakerEntityLinkKey,
+            box.getPersistentDataContainer().set(CustomItemManager.entityLinkKey,
                     PersistentDataType.STRING,
                     display.getUniqueId().toString());
 
@@ -166,6 +182,57 @@ public class SpeakerListener implements Listener {
 
         //cancel the actual placement
         e.getBlockPlaced().setType(Material.AIR);
+    }
+
+    @EventHandler
+    public void onInventoryChange(PlayerInventorySlotChangeEvent e)
+    {
+        //only for head slot
+        if(e.getSlot() != 39)
+            return;
+
+        //new item is a speaker
+        if(Speaker.isSpeaker(e.getNewItemStack()))
+        {
+            //player has put speaker on their head
+            Speaker.addActiveSpeaker(
+                    null,
+                    FrequencyManager.getFrequency(e.getNewItemStack()),
+                    RadioVoiceChat.api.fromEntity(e.getPlayer())
+            );
+        }
+        //old item a speaker
+        else if (Speaker.isSpeaker(e.getOldItemStack())) {
+            //player has taken speaker off their head
+            Speaker.removeActiveSpeaker(RadioVoiceChat.api.fromEntity(e.getPlayer()));
+        }
+    }
+
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent e)
+    {
+        //do they have a speaker on their head
+        if(!Speaker.isSpeaker(e.getPlayer().getInventory().getHelmet()))
+            return;
+
+        //they do
+        //player has put speaker on their head
+        Speaker.addActiveSpeaker(
+                null,
+                FrequencyManager.getFrequency(e.getPlayer().getInventory().getHelmet()),
+                RadioVoiceChat.api.fromEntity(e.getPlayer())
+        );
+    }
+
+    @EventHandler
+    public void onPlayerLeave(PlayerQuitEvent e)
+    {
+        //do they have a speaker on their head
+        if(!Speaker.isSpeaker(e.getPlayer().getInventory().getHelmet()))
+            return;
+
+        //they do
+        Speaker.removeActiveSpeaker(RadioVoiceChat.api.fromEntity(e.getPlayer()));
     }
 
     //breakage events
@@ -455,7 +522,6 @@ public class SpeakerListener implements Listener {
     @EventHandler
     public void onEntitiesLoad(EntitiesLoadEvent e)
     {
-
         //are we checking entities
         if(!RadioConfig.speaker_useEntity)
             return;
@@ -521,7 +587,7 @@ public class SpeakerListener implements Listener {
         Speaker.removeActiveSpeaker(RadioVoiceChat.api.fromEntity(e.getEntity()));
 
         //and delete the linked display
-        String stringLinkedId = e.getEntity().getPersistentDataContainer().get(Speaker.speakerEntityLinkKey, PersistentDataType.STRING);
+        String stringLinkedId = e.getEntity().getPersistentDataContainer().get(CustomItemManager.entityLinkKey, PersistentDataType.STRING);
 
         try {
             if(stringLinkedId != null)
@@ -607,7 +673,7 @@ public class SpeakerListener implements Listener {
         if(keyedRecipe.getKey().equals(Speaker.speakerCraftKey))
         {
             //update result
-            e.getInventory().setResult(FrequencyManager.addFrequencyToCraft(result, mtx, RadioConfig.fieldRadio_recipe_basic_shape));
+            e.getInventory().setResult(FrequencyManager.addFrequencyToCraft(result, mtx, RadioConfig.speaker_recipe_basic_shape));
         }
 
         else if(keyedRecipe.getKey().equals(Speaker.speakerRetuneKey))

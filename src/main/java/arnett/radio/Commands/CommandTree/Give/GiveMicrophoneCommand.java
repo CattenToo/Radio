@@ -1,21 +1,22 @@
 package arnett.radio.Commands.CommandTree.Give;
 
 import arnett.radio.Commands.SubCommand;
-import arnett.radio.RadioConfig;
 import arnett.radio.FrequencyManager;
-import arnett.radio.Items.Radio.FieldRadio;
+import arnett.radio.Items.Microphone.Microphone;
+import arnett.radio.Items.Speaker.Speaker;
+import arnett.radio.RadioConfig;
 import org.bukkit.entity.Player;
 
 import java.util.List;
 
-public class GiveFieldRadioCommand implements SubCommand {
+public class GiveMicrophoneCommand implements SubCommand {
 
     @Override
     public boolean execute(Player player, String[] args, int level) {
         if(args.length <= level)
         {
             //no frequency provided
-            player.give(FieldRadio.getRadio("BRODCAST"));
+            player.give(Microphone.getMicrophone("DECORATION"));
             return true;
         }
 
@@ -28,23 +29,23 @@ public class GiveFieldRadioCommand implements SubCommand {
 
         frequency.setLength(frequency.length() - RadioConfig.frequencySplitString.length());
 
-        player.give(FieldRadio.getRadio(frequency.toString()));
+        player.give(Microphone.getMicrophone(frequency.toString()));
         return true;
     }
 
     @Override
     public String getName() {
-        return "fieldradio";
+        return "microphone";
     }
 
     @Override
     public String getDescription() {
-        return "gives field radio of frequency";
+        return "gives microphone of frequency";
     }
 
     @Override
     public String getSyntax() {
-        return "/radio give fieldradio <frequency>";
+        return "/radio give microphone <frequency>";
     }
 
     @Override

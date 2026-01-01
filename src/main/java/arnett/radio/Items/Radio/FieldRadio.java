@@ -40,7 +40,7 @@ public class FieldRadio {
         // Plain Radio
         if(RadioConfig.fieldRadio_recipe_basic_enabled)
             recipes.add(FrequencyManager.getFrequencyIndependentShapedRecipe(radioCraftKey, getRadio(),
-                RadioConfig.fieldRadio_recipe_basic_shape, RadioConfig.fieldRadio_recipe_basic_ingredients));
+                    RadioConfig.fieldRadio_recipe_basic_shape, RadioConfig.fieldRadio_recipe_basic_ingredients));
 
         //retuning
         if(RadioConfig.fieldRadio_recipe_retune_enabled)
@@ -54,7 +54,7 @@ public class FieldRadio {
                 if(i.equals("RADIO"))
                     recipe.addIngredient(RadioConfig.fieldRadio_baseMaterial);
 
-                //special case DYE for frequency
+                    //special case DYE for frequency
                 else if (i.equals("DYE"))
                     recipe.addIngredient(new RecipeChoice.MaterialChoice(MaterialTags.DYES));
 
@@ -92,10 +92,10 @@ public class FieldRadio {
 
         //sets Item Component Data
         radio.setData(DataComponentTypes.CONSUMABLE, Consumable.consumable()
-                        .consumeSeconds(Float.MAX_VALUE)
-                        .animation(ItemUseAnimation.TOOT_HORN)
-                        .hasConsumeParticles(false)
-                        .build());
+                .consumeSeconds(Float.MAX_VALUE)
+                .animation(ItemUseAnimation.TOOT_HORN)
+                .hasConsumeParticles(false)
+                .build());
 
         radio.editMeta(meta -> {
             meta.getUseCooldown().setCooldownSeconds(5f);

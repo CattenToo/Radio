@@ -1,6 +1,7 @@
 package arnett.radio.Commands;
 
 import arnett.radio.Commands.CommandTree.Give.GiveFieldRadioCommand;
+import arnett.radio.Commands.CommandTree.Give.GiveMicrophoneCommand;
 import arnett.radio.Commands.CommandTree.Give.GiveSpeakerCommand;
 import arnett.radio.Commands.CommandTree.GiveBranch;
 import arnett.radio.Commands.CommandTree.Manage.Config.SaveConfigCommand;
@@ -44,7 +45,8 @@ public class CommandManager implements CommandExecutor, TabCompleter {
                     subCommands.add(new GiveBranch(new HashMap<>(Map.of(
 
                             new GiveFieldRadioCommand(), "none",
-                            new GiveSpeakerCommand(), "voicechat"
+                            new GiveSpeakerCommand(), "voicechat",
+                            new GiveMicrophoneCommand(), "voicechat"
 
                     ))));
                     subCommands.add(new MonitorBranch(new HashMap<>(Map.of(
@@ -76,6 +78,8 @@ public class CommandManager implements CommandExecutor, TabCompleter {
         if (args.length > 0)
         {
             for (SubCommand sub : subCommands){
+
+                //is it the radio command
                 if (args[0].equalsIgnoreCase(sub.getName()))
                 {
                     //preform sub command given

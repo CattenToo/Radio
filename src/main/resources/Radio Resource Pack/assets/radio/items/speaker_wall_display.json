@@ -1,6 +1,6 @@
 {
   "model":{
     "type": "minecraft:model",
-    "model": "radio:item/speaker_wall_display"
+    "model": "radio:item/display/speaker_wall_display"
   }
 } 

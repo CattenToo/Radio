@@ -2,6 +2,10 @@ package arnett.radio.Items.Radio;
 
 import arnett.radio.FrequencyManager;
 import arnett.radio.RadioConfig;
+import arnett.radio.RadioVoiceChat;
+import de.maxhenkel.voicechat.api.VoicechatConnection;
+import de.maxhenkel.voicechat.api.VoicechatServerApi;
+import de.maxhenkel.voicechat.api.packets.MicrophonePacket;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -132,57 +136,34 @@ public class FieldRadioVoiceChat {
                 addToFrequency(FrequencyManager.getFrequency(radio), target.getUniqueId());
     }
 
-    public static short[] applyFilter(short[] decodedData)
+    public static void sendPacketToFrequency(UUID sender, byte[] audioData, String frequency, MicrophonePacket packet)
     {
-        // Filter states to maintain continuity across packets
-        double lowPassState = 0;
-        double highPassState = 0;
-        double lastRawSample = 0;
-        Random random = new Random();
+        //do these radios exist
+        if (FieldRadioVoiceChat.frequencyListeners.get(frequency) == null)
+            return;
 
-        // Configuration constants
-        double LP_ALPHA = RadioConfig.fieldRadio_audioFilter_LPAlpha; // Lower = more muffled
-        double Volume = RadioConfig.fieldRadio_audioFilter_volume; // Lower = more muffled
-        double HP_ALPHA = RadioConfig.fieldRadio_audioFilter_HPAlpha; // Higher = less bass
-        int NOISE_FLOOR = RadioConfig.fieldRadio_audioFilter_noiseFloor;  // Constant hiss volume
-        int CRACKLE_CHANCE = RadioConfig.fieldRadio_audioFilter_crackleChance; // 1 in 2000 samples
+        // hash map of players already computed so we don't waste time with doing it again
+        Set<UUID> processed = new HashSet<>((int)Math.sqrt(FieldRadioVoiceChat.frequencyListeners.get(frequency).size()));
 
-        // no, I did not actually code the audio manipulation part of the filter since I'm not the best at working with audio
-        //actually, I did the volume part myself, ya know, the easiest part; i'm so good
+        //so player doesn't hear themselves
+        processed.add(sender);
 
-        for (int i = 0; i < decodedData.length; i++) {
-            double currentSample = decodedData[i];
+        //sending to field radios
+        for(UUID id : FieldRadioVoiceChat.frequencyListeners.get(frequency))
+        {
+            //skip if already added to set (they've already been sent the packet)
+            if(!processed.add(id))
+                continue;
 
-            //Volume multiplier
-            decodedData[i] *= Volume;
+            //grab connection
+            VoicechatConnection connection = RadioVoiceChat.api.getConnectionOf(id);
 
-            // 1. BANDPASS FILTER (EQ)
-            // Low Pass (Cuts highs)
-            lowPassState = LP_ALPHA * currentSample + (1 - LP_ALPHA) * lowPassState;
-            double filtered = lowPassState;
+            //make sure connection is there
+            if(connection == null || !connection.isConnected())
+                continue;
 
-            // High Pass (Cuts lows)
-            highPassState = HP_ALPHA * highPassState + HP_ALPHA * (filtered - lastRawSample);
-            lastRawSample = filtered;
-
-            // 2. SATURATION (The "Crunch")
-            // Convert to -1.0 to 1.0 range for math
-            double x = highPassState / 32768.0;
-            // Soft clipping formula: (3x - x^3) / 2
-            double saturated = (3 * x - Math.pow(x, 3)) / 2.0;
-
-            // 3. NOISE & INTERFERENCE
-            // Constant low-level hiss
-            int hiss = random.nextInt(NOISE_FLOOR * 2 + 1) - NOISE_FLOOR;
-
-            // Random electrical "crackles"
-            int crackle = (random.nextInt(CRACKLE_CHANCE) == 0) ? (random.nextInt(6000) - 3000) : 0;
-
-            // 4. CLAMP & OUTPUT
-            int finalSample = (int) (saturated * 32767) + hiss + crackle;
-            decodedData[i] = (short) Math.max(-32768, Math.min(32767, finalSample));
+            //send audio
+            RadioVoiceChat.api.sendStaticSoundPacketTo(connection, packet.staticSoundPacketBuilder().opusEncodedData(audioData).build());
         }
-
-        return decodedData;
     }
 }
