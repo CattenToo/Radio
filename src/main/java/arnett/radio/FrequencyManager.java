@@ -8,6 +8,7 @@ import com.destroystokyo.paper.MaterialTags;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import de.maxhenkel.voicechat.api.VoicechatServerApi;
+import de.maxhenkel.voicechat.api.audiochannel.AudioPlayer;
 import de.maxhenkel.voicechat.api.packets.MicrophonePacket;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
@@ -27,6 +28,7 @@ import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.persistence.PersistentDataType;
 import org.w3c.dom.Text;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
@@ -35,6 +37,7 @@ public class FrequencyManager {
 
     //stores which frequency an item is connected to
     public static final NamespacedKey radioFrequencyKey = new NamespacedKey(Radio.singleton, "frequency");
+    public static HashMap<String, Short[]> presetFrequencyAudio = new HashMap<>(3);
 
     //stores which dye tab belongs to which dye and vice versa
     //normal is Dye names
@@ -55,6 +58,29 @@ public class FrequencyManager {
             numberedDyes.put(key, i);
             i++;
         }
+
+        //clear the list
+        presetFrequencyAudio.clear();
+
+        //refill the list
+        RadioConfig.speaker_presetAudio.forEach((key, value) ->{
+
+            // todo
+
+            // get the audio file
+
+            // read the file to short a short array
+
+            // store that here with the frequency
+
+            // then in speakers, when adding a speaker, create an audio channel
+            // if there is data present here for that frequency
+
+            // then set an audio player to play this audio data
+
+            // so yeah just gotta do that somehow
+
+        });
     }
 
     //used for shaped recipes

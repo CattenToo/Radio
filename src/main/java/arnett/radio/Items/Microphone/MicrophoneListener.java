@@ -6,6 +6,7 @@ import arnett.radio.Items.Speaker.Speaker;
 import arnett.radio.Radio;
 import arnett.radio.RadioConfig;
 import arnett.radio.RadioVoiceChat;
+import de.maxhenkel.voicechat.api.audiochannel.AudioPlayer;
 import de.maxhenkel.voicechat.api.events.MicrophonePacketEvent;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import org.apache.commons.lang3.tuple.Pair;
@@ -230,8 +231,6 @@ public class MicrophoneListener implements Listener {
         //is the player attached
         if(!Microphone.attachedPlayers.containsKey(player))
             return;
-
-
 
         UUID playerId = e.getSenderConnection().getPlayer().getUuid();
 

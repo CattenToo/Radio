@@ -22,6 +22,7 @@ public class RadioVoiceChat implements VoicechatPlugin {
     public static HashMap<UUID, OpusEncoder> encoders = new HashMap<>();
 
 
+
     @Override
     public String getPluginId() {
         return "FieldRadio";

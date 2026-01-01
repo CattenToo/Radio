@@ -23,7 +23,7 @@ frequency-representation:
     PURPLE: "Pur"
     MAGENTA: "Mag"
     PINK: "Pin"
-  separating-string: "-"
+  separating-string: "/"
 
 # Field Radio
 fieldradio:
@@ -96,6 +96,10 @@ speaker:
     noise-floor: 40  # Constant hiss volume
     crackle-chance: 3000 # 1 in 3000 chance per sample
 
+  preset-audio:
+    # so this will play "rift.wav" on the RED/RED/RED/RED frequency
+    # must use what was set as the frequency separating-string here
+    RED/RED/RED/RED: "rift.wav"
 
   recipe:
     basic:
