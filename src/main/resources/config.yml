@@ -27,6 +27,10 @@ frequency-representation:
 
 # Field Radio
 fieldradio:
+
+  #hide these in set command
+  ~/base-material/: false
+
   audio-filter:
     enabled: true
     LP-alpha: 0.8  # Lower = more muffled

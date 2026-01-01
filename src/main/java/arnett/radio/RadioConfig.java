@@ -102,6 +102,8 @@ public class RadioConfig {
          frequencySplitString = Radio.config.getString("frequency-representation.separating-string");
 
          //field radio
+
+
              //  Audio Filter
              fieldRadio_audioFilter_enabled = Radio.config.getBoolean("fieldradio.audio-filter.enabled");
              fieldRadio_audioFilter_LPAlpha = Radio.config.getDouble("fieldradio.audio-filter.LP-alpha");

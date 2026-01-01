@@ -148,6 +148,4 @@ public class FieldRadioVoiceChatListener implements Listener {
                 e.getPacket()
         );
     }
-
-
 }

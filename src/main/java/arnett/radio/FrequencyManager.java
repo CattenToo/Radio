@@ -259,7 +259,6 @@ public class FrequencyManager {
         String[] split = frequency.split(RadioConfig.frequencySplitString);
         for(int i = 0; i < split.length; i++)
         {
-            Radio.logger.info(split[i]);
             c = c.append(Component.text(split[i] + (i == split.length - 1 ? "" : RadioConfig.frequencySplitString))
                     .color(CustomItemManager.getFrequencyTextColor(split[i]))
             );
@@ -316,7 +315,7 @@ public class FrequencyManager {
                 catch (Exception e)
                 {
                     //material not found or something went wrong
-                    Radio.logger.info("Incorrectly registered Material For Radio basic recipe");
+                    Radio.logger.warning("Incorrectly registered Material For Radio basic recipe");
                     mat = Material.AIR;
                 }
                 if (mat != null) {
@@ -344,7 +343,7 @@ public class FrequencyManager {
 
     public static String getFrequency(ItemStack item)
     {
-        return item.getPersistentDataContainer().getOrDefault(radioFrequencyKey, PersistentDataType.STRING, "none");
+        return item.getPersistentDataContainer().getOrDefault(radioFrequencyKey, PersistentDataType.STRING, "");
     }
 
     public static String getFrequency(Entity e)
