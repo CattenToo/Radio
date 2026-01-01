@@ -70,6 +70,7 @@ public class RadioConfig {
         public static Vector speaker_entity_displayOffset;
 
     //microphone
+        public static int microphone_squaredUseRange;
 
         //  Audio Filter
         public static boolean microphone_audioFilter_enabled;
@@ -164,6 +165,9 @@ public class RadioConfig {
             );
 
         // Microphone Settings
+
+            //use range
+            microphone_squaredUseRange = (int)Math.pow(Radio.config.getInt("microphone.use-range"), 2);
 
             //audio filter
             microphone_audioFilter_enabled = Radio.config.getBoolean("microphone.audio-filter.enabled");

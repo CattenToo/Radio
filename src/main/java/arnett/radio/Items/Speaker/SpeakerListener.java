@@ -8,18 +8,15 @@ import arnett.radio.Radio;
 import arnett.radio.RadioConfig;
 import arnett.radio.RadioVoiceChat;
 import com.destroystokyo.paper.event.block.BlockDestroyEvent;
-import de.maxhenkel.voicechat.api.Entity;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.event.block.BlockBreakBlockEvent;
+import io.papermc.paper.event.player.PlayerInventorySlotChangeEvent;
 import net.kyori.adventure.text.Component;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Crafter;
-import org.bukkit.entity.Interaction;
-import org.bukkit.entity.ItemDisplay;
-import org.bukkit.entity.Player;
-import org.bukkit.entity.Shulker;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
@@ -27,12 +24,18 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.ItemSpawnEvent;
+import org.bukkit.event.inventory.ClickType;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.event.world.EntitiesLoadEvent;
 import org.bukkit.event.world.EntitiesUnloadEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.util.Vector;
@@ -53,13 +56,7 @@ public class SpeakerListener implements Listener {
             if(!Speaker.isEntitySpeaker(e.getItemInHand()))
                 return;
 
-            String frequency = FrequencyManager.getFrequency(e.getItemInHand());
-
-            //check if this has been tagged with a frequency, if not it's probably just a regular head
-            if(frequency.isEmpty())
-                return;
-
-            onSpeakerEntityPlaced(e, frequency);
+            onSpeakerEntityPlaced(e, FrequencyManager.getFrequency(e.getItemInHand()));
         }
         else {
             //is the block the specified head type
@@ -91,6 +88,13 @@ public class SpeakerListener implements Listener {
     private void onSpeakerEntityPlaced(BlockPlaceEvent e, String frequency)
     {
         //speaker has been placed
+
+        // does it have enough room
+        if(!e.getBlockPlaced().getLocation().add(RadioConfig.speaker_entity_displayOffset).getNearbyEntitiesByType(Interaction.class, .2f).isEmpty())
+        {
+            e.setCancelled(true);
+            return;
+        }
 
         //get the location
         Location placeSpot = e.getBlockPlaced().getLocation().add(RadioConfig.speaker_entity_displayOffset);
@@ -180,6 +184,56 @@ public class SpeakerListener implements Listener {
         e.getBlockPlaced().setType(Material.AIR);
     }
 
+    @EventHandler
+    public void onInventoryChange(PlayerInventorySlotChangeEvent e)
+    {
+        //only for head slot
+        if(e.getSlot() != 39)
+            return;
+
+        //new item is a speaker
+        if(Speaker.isSpeaker(e.getNewItemStack()))
+        {
+            //player has put speaker on their head
+            Speaker.addActiveSpeaker(
+                    null,
+                    FrequencyManager.getFrequency(e.getNewItemStack()),
+                    RadioVoiceChat.api.fromEntity(e.getPlayer())
+            );
+        }
+        //old item a speaker
+        else if (Speaker.isSpeaker(e.getOldItemStack())) {
+            //player has taken speaker off their head
+            Speaker.removeActiveSpeaker(RadioVoiceChat.api.fromEntity(e.getPlayer()));
+        }
+    }
+
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent e)
+    {
+        //do they have a speaker on their head
+        if(!Speaker.isSpeaker(e.getPlayer().getInventory().getHelmet()))
+            return;
+
+        //they do
+        //player has put speaker on their head
+        Speaker.addActiveSpeaker(
+                null,
+                FrequencyManager.getFrequency(e.getPlayer().getInventory().getHelmet()),
+                RadioVoiceChat.api.fromEntity(e.getPlayer())
+        );
+    }
+
+    @EventHandler
+    public void onPlayerLeave(PlayerQuitEvent e)
+    {
+        //do they have a speaker on their head
+        if(!Speaker.isSpeaker(e.getPlayer().getInventory().getHelmet()))
+            return;
+
+        //they do
+        Speaker.removeActiveSpeaker(RadioVoiceChat.api.fromEntity(e.getPlayer()));
+    }
 
     //breakage events
     @EventHandler
@@ -468,7 +522,6 @@ public class SpeakerListener implements Listener {
     @EventHandler
     public void onEntitiesLoad(EntitiesLoadEvent e)
     {
-
         //are we checking entities
         if(!RadioConfig.speaker_useEntity)
             return;
@@ -620,7 +673,7 @@ public class SpeakerListener implements Listener {
         if(keyedRecipe.getKey().equals(Speaker.speakerCraftKey))
         {
             //update result
-            e.getInventory().setResult(FrequencyManager.addFrequencyToCraft(result, mtx, RadioConfig.fieldRadio_recipe_basic_shape));
+            e.getInventory().setResult(FrequencyManager.addFrequencyToCraft(result, mtx, RadioConfig.speaker_recipe_basic_shape));
         }
 
         else if(keyedRecipe.getKey().equals(Speaker.speakerRetuneKey))

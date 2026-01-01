@@ -1,19 +1,26 @@
 package arnett.radio.Items.Microphone;
 
 import arnett.radio.FrequencyManager;
+import arnett.radio.Items.CustomItemManager;
 import arnett.radio.Radio;
 import arnett.radio.RadioConfig;
-import arnett.radio.RadioVoiceChat;
 import com.destroystokyo.paper.MaterialTags;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import net.kyori.adventure.bossbar.BossBar;
-import net.kyori.adventure.text.BuildableComponent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.minecraft.network.protocol.game.ClientboundSetEntityLinkPacket;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.server.level.ServerPlayer;
+import org.apache.commons.lang3.tuple.Pair;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Sound;
 import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.entity.CraftEntity;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -21,12 +28,10 @@ import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.RecipeChoice;
 import org.bukkit.inventory.ShapelessRecipe;
 import org.bukkit.persistence.PersistentDataType;
-import org.checkerframework.checker.units.qual.A;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class Microphone {
     //used both to identify microphone items and chunks that have microphones
@@ -40,8 +45,9 @@ public class Microphone {
     public static final NamespacedKey microphoneWallDisplayModelKey = new NamespacedKey("radio", "microphone_wall_display");
 
     //this list should be relativity small since it only track player attached to microphones
-    //I know map in map can be done with record but for optimization’s sake, it's like this
-    public static HashMap<Player, HashMap<String, Entity>> attachedPlayers = new HashMap<>();
+    //hashmap in hashmap for the faster lookup time
+    //to reduce overhead, when created in "attachPlayerToMicrophone" the HashMap is created with expected size of 3
+    public static HashMap<Player, HashMap<String, Pair<Entity, BukkitTask>>> attachedPlayers = new HashMap<>();
 
     static HashMap<String, BossBar> indicatorBarDisplays = new HashMap<>();
 
@@ -169,21 +175,21 @@ public class Microphone {
         catch (Exception ignored){};
 
         //add to attachments, will replace if already there and create a new entry if player isn't yet present
-        attachedPlayers.computeIfAbsent(player, (p) -> new HashMap<>())
-                .put(frequency, mic);
+        attachedPlayers.computeIfAbsent(player, (p) -> new HashMap<>(3))
+                .put(frequency, createEntityDistanceCheckerPair(player, mic));
+
+        //link the player and the mic with a lead
+        setLinkToMic(player, mic, frequency, true);
     }
 
     public static void movePlayerToMicrophone(Player player, String frequency, Entity mic)
     {
-        if (!(attachedPlayers.containsKey(player)))
-            //player isn't even attached
-            return;
-
-        //overwrite attachment
-        attachedPlayers.get(player).put(frequency, mic);
+        HashMap<String, Pair<Entity, BukkitTask>> connectionsMap = attachedPlayers.get(player);
+        detachPlayerFromMicrophone(player, frequency, connectionsMap.get(frequency).getLeft());
+        attachPlayerToMicrophone(player, frequency, mic);
     }
 
-    public static void detachPlayerFromMicrophone(Player player, String frequency)
+    public static void detachPlayerFromMicrophone(Player player, String frequency, Entity mic)
     {
         //hide the boss bar if possible
         try {
@@ -195,36 +201,98 @@ public class Microphone {
         //remove the player if they're in the list
         if(attachedPlayers.containsKey(player))
         {
+            HashMap<String, Pair<Entity, BukkitTask>> connectionMap = attachedPlayers.get(player);
+
+            //cancel the runnable
+            connectionMap.get(frequency).getRight().cancel();
+
             //remove the mic
-            attachedPlayers.get(player).remove(frequency);
+            connectionMap.remove(frequency);
 
             //remove the player if they're no longer attached to anything
-            if(attachedPlayers.get(player).isEmpty())
+            if(connectionMap.isEmpty())
                 attachedPlayers.remove(player);
         }
+
+        //remove the link
+        setLinkToMic(player, mic, frequency, false);
     }
 
     public static void removeMicrophoneAttachments(String frequency, Entity mic) {
         //check all entries to see if they are of this mic, if so remove them
-        //normally this would be bad, but it's not something called often so it should be fine
+        //normally this would be rough, but it's not something called often so it should be fine
         attachedPlayers.entrySet().removeIf((entry) ->{
 
-            entry.getValue().entrySet().removeIf((microphoneEntry) -> {
-                //player is attached to this mic
+            entry.getValue().entrySet().removeIf(e -> {
+                if(e.getValue().getLeft().equals(mic))
+                {
+                    //player is attached to this mic
 
-                //hide the boss bar indicator
-                entry.getKey().hideBossBar(indicatorBarDisplays.get(frequency));
+                    //hide the boss bar indicator
+                    entry.getKey().hideBossBar(indicatorBarDisplays.get(frequency));
 
-                //remove them from this frequency
-                return microphoneEntry.getValue().equals(mic);
+                    //stop the runnable
+                    e.getValue().getRight().cancel();
+
+                    //remove them from this frequency
+                    return true;
+                }
+
+                return false;
             });
 
             return entry.getValue().isEmpty();
         });
+
+        //all links would be removed with the entity's removal so no need to worry about that
     }
 
     public static boolean isAttached(Player player, String frequency)
     {
         return attachedPlayers.containsKey(player) && attachedPlayers.get(player).containsKey(frequency);
+    }
+
+    public static void setLinkToMic(Player player, Entity mic, String frequency, boolean linked)
+    {
+        if(!mic.getPersistentDataContainer().has(CustomItemManager.entityLinkKey))
+            return;
+
+        try {
+            //get the display entity
+            Entity dispalyEntity = Bukkit.getEntity(
+                    UUID.fromString(
+                            mic.getPersistentDataContainer().get(CustomItemManager.entityLinkKey, PersistentDataType.STRING)
+                    )
+            );
+
+            CustomItemManager.setGlowForPlayer(player, dispalyEntity, linked, FrequencyManager.getTextFormatColor(frequency));
+        }
+        //was already removed somehow or can't find link
+        catch (Exception ignored){}
+
+        //play link sound
+        mic.getLocation().getWorld().playSound(mic.getLocation(), linked? Sound.BLOCK_AMETHYST_BLOCK_RESONATE : Sound.BLOCK_AMETHYST_BLOCK_STEP, .5f, 1.5f);
+
+    }
+
+    public static Pair<Entity, BukkitTask> createEntityDistanceCheckerPair(Player player, Entity mic)
+    {
+        return Pair.of(mic, new BukkitRunnable() {
+            @Override
+            public void run() {
+                //if the entity was removed somehow
+                if(mic == null || player == null)
+                    cancel();
+
+                if(player.getLocation().distanceSquared(mic.getLocation()) > RadioConfig.microphone_squaredUseRange)
+                {
+                    //detach them
+                    detachPlayerFromMicrophone(player, FrequencyManager.getFrequency(mic) ,mic);
+
+                    //stop the distance checker
+                    cancel();
+                }
+            }
+        }.runTaskTimer(Radio.singleton, 0L, 10L));
     }
 }

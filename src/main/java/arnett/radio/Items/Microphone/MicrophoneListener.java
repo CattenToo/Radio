@@ -8,9 +8,11 @@ import arnett.radio.RadioConfig;
 import arnett.radio.RadioVoiceChat;
 import de.maxhenkel.voicechat.api.events.MicrophonePacketEvent;
 import io.papermc.paper.datacomponent.DataComponentTypes;
+import org.apache.commons.lang3.tuple.Pair;
 import org.bukkit.*;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Crafter;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Interaction;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.Player;
@@ -24,8 +26,10 @@ import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
+import java.util.HashMap;
 import java.util.UUID;
 
 public class MicrophoneListener implements Listener {
@@ -38,6 +42,13 @@ public class MicrophoneListener implements Listener {
         String frequency = FrequencyManager.getFrequency(e.getItemInHand());
 
         //microphone has been placed
+
+        // does it have enough room
+        if(!e.getBlockPlaced().getLocation().add(RadioConfig.microphone_entity_displayOffset).getNearbyEntitiesByType(Interaction.class, .2f).isEmpty())
+        {
+            e.setCancelled(true);
+            return;
+        }
 
         //get the location
         Location placeSpot = e.getBlockPlaced().getLocation().add(RadioConfig.microphone_entity_displayOffset);
@@ -133,19 +144,23 @@ public class MicrophoneListener implements Listener {
         String frequency = FrequencyManager.getFrequency(e.getRightClicked());
 
         // are they attached to this frequency already
-        if(Microphone.attachedPlayers.containsKey(e.getPlayer()) &&
-                Microphone.attachedPlayers.get(e.getPlayer()).containsKey(frequency))
+        if(Microphone.attachedPlayers.containsKey(e.getPlayer()))
         {
-            // is it this mic or another one
-            if(Microphone.attachedPlayers.get(e.getPlayer()).get(frequency).equals(e.getRightClicked()))
+            HashMap<String, Pair<Entity, BukkitTask>> connectionsMap = Microphone.attachedPlayers.get(e.getPlayer());
+
+            if(connectionsMap.containsKey(frequency))
             {
-                // this mic so remove them
-                Microphone.detachPlayerFromMicrophone(e.getPlayer(), frequency);
-                return;
-            }
-            else {
-                // they are attached to a different mic so just move them to this one
-                Microphone.movePlayerToMicrophone(e.getPlayer(), frequency, e.getRightClicked());
+                // is it this mic or another one
+                if(connectionsMap.get(frequency).getLeft().equals(e.getRightClicked()))
+                {
+                    // this mic so remove them
+                    Microphone.detachPlayerFromMicrophone(e.getPlayer(), frequency, e.getRightClicked());
+                    return;
+                }
+                else {
+                    // they are attached to a different mic so just move them to this one
+                    Microphone.movePlayerToMicrophone(e.getPlayer(), frequency, e.getRightClicked());
+                }
             }
         }
 
@@ -270,7 +285,7 @@ public class MicrophoneListener implements Listener {
         if(e.getRecipe().getKey().equals(Speaker.speakerCraftKey))
         {
             //update result
-            e.setResult(FrequencyManager.addFrequencyToCraft(result, mtx, RadioConfig.speaker_recipe_basic_shape));
+            e.setResult(FrequencyManager.addFrequencyToCraft(result, mtx, RadioConfig.microphone_recipe_basic_shape));
         }
 
         //retuning

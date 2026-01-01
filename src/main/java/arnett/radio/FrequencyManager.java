@@ -13,6 +13,7 @@ import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.TextColor;
+import net.minecraft.ChatFormatting;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
@@ -80,7 +81,6 @@ public class FrequencyManager {
                     Material item = mtx[i*3 + j].getType();
                     int digit = Character.getNumericValue(checked);
                     String dyeName = item.name().substring(0, item.name().length()-4);
-
                     //dye
                     if(dyesChecker[digit] == null)
                     {
@@ -197,6 +197,44 @@ public class FrequencyManager {
         catch (Exception e)
         {
             return BossBar.Color.WHITE;
+        }
+    }
+
+    public static ChatFormatting getTextFormatColor(String frequency)
+    {
+        int splitFirstIndex = frequency.indexOf(RadioConfig.frequencySplitString);
+
+        //if it doesn't have a split
+        if(splitFirstIndex == -1)
+            splitFirstIndex = frequency.length();
+
+        String mainFq = frequency.substring(0, splitFirstIndex);
+
+        try {
+            //unfortunately, these colors don't match the ChatFormatting colors so we gotta do some mismatching
+            return switch (mainFq)
+            {
+                case "LIGHT_GRAY" -> ChatFormatting.GRAY;
+                case "GRAY" -> ChatFormatting.DARK_GRAY;
+                case "BLACK" -> ChatFormatting.BLACK;
+                case "BROWN" -> ChatFormatting.GOLD;
+                case "RED" -> ChatFormatting.RED;
+                case "ORANGE" -> ChatFormatting.GOLD;
+                case "YELLOW" -> ChatFormatting.YELLOW;
+                case "LIME" -> ChatFormatting.GREEN;
+                case "GREEN" -> ChatFormatting.GREEN;
+                case "CYAN" -> ChatFormatting.AQUA;
+                case "LIGHT_BLUE" -> ChatFormatting.BLUE;
+                case "BLUE" -> ChatFormatting.DARK_BLUE;
+                case "PURPLE" -> ChatFormatting.DARK_PURPLE;
+                case "MAGENTA" -> ChatFormatting.LIGHT_PURPLE;
+                case "PINK" -> ChatFormatting.LIGHT_PURPLE;
+                default -> ChatFormatting.WHITE;
+            };
+        }
+        catch (Exception e)
+        {
+            return ChatFormatting.WHITE;
         }
     }
 

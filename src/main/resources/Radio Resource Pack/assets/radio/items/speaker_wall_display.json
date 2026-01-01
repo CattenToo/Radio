@@ -1,0 +1,6 @@
+{
+  "model":{
+    "type": "minecraft:model",
+    "model": "radio:item/display/speaker_wall_display"
+  }
+} 

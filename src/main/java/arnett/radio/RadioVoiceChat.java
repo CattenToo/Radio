@@ -59,14 +59,20 @@ public class RadioVoiceChat implements VoicechatPlugin {
 
     public static void removeDecoder(UUID id)
     {
-        encoders.get(id).close();
-        encoders.remove(id);
+        if(!decoders.containsKey(id))
+            return;
+
+        decoders.get(id).close();
+        decoders.remove(id);
     }
 
     public static void removeEncoder(UUID id)
     {
-        decoders.get(id).close();
-        decoders.remove(id);
+        if(!encoders.containsKey(id))
+            return;
+
+        encoders.get(id).close();
+        encoders.remove(id);
     }
 
     @Override

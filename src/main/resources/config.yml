@@ -48,8 +48,8 @@ fieldradio:
     basic:
       enabled: true
 
-      # Use 0 for main frequency and numbers 1 - 9 for subfrequencies,
-      # Recommended to have a main frequency and one subfrequency
+      # # Use 0-9 used for frequencies,
+      # Recommended to use 2 frequencies for this
       shape:
         - "C01"
         - "IAI"
@@ -78,7 +78,7 @@ speaker:
   # weather the speaker uses a block or an entity
   # this is specifically so that you can have the option to override a head
   # or just use an entity and not override any blocks
-  use-entity: false
+  use-entity: true
 
   # cache size for number of stored channels for people speaking on a frequency
   cache-size: 8
@@ -97,8 +97,8 @@ speaker:
     basic:
       enabled: true
 
-      # Use 0 for main frequency and numbers 1 - 9 for subfrequencies,
-      # Recommended to have only a main frequency
+      # Use 0-9 used for frequencies
+      # Recommended to have only one frequency for this
       shape:
         - "0A0"
         - "IRI"
@@ -150,6 +150,9 @@ microphone:
   #hide these in set command
   ~/entity/: false
 
+  # range in which it can be used
+  use-range: 3
+
   # applied when talking through microphone
   audio-filter:
     enabled: false # if this is too intensive on the server you can disable it with this
@@ -162,14 +165,16 @@ microphone:
     basic:
       enabled: true
 
-      # Use 0 for main frequency and numbers 1 - 9 for subfrequencies,
-      # Recommended to have only a main frequency
+      # Use 0-9 used for frequencies
+      # Recommended to have only one frequency for this
       shape:
-        - "0II"
-        - "III"
-        - "III"
+        - " 0 "
+        - "IAI"
+        - " D "
       ingredients:
         I: "IRON_INGOT"
+        A: "AMETHYST_SHARD"
+        D: "DIAMOND"
 
     # Resting the frequency of the speaker
     retune:

@@ -12,6 +12,7 @@ import de.maxhenkel.voicechat.api.audiochannel.EntityAudioChannel;
 import de.maxhenkel.voicechat.api.audiochannel.LocationalAudioChannel;
 import de.maxhenkel.voicechat.api.events.MicrophonePacketEvent;
 import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.Equippable;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.*;
@@ -45,6 +46,7 @@ public class Speaker {
 
     public static ArrayList<Recipe> getRecipes()
     {
+
         ArrayList<Recipe> recipes = new ArrayList<Recipe>();
 
         // Plain Speaker
@@ -103,6 +105,20 @@ public class Speaker {
         return speaker;
     }
 
+    public static ItemStack getSpeakerEntityItem(String frequency)
+    {
+        ItemStack speaker = getSpeakerEntityItem();
+
+        //set frequency
+        speaker.editPersistentDataContainer(pdc -> {
+            pdc.set(FrequencyManager.radioFrequencyKey, PersistentDataType.STRING, frequency);
+        });
+
+        speaker.lore(List.of(Component.text(FrequencyManager.convertToDisplayFrequency(frequency))));
+
+        return speaker;
+    }
+
     public static ItemStack getSpeaker()
     {
         if(RadioConfig.speaker_useEntity)
@@ -128,6 +144,9 @@ public class Speaker {
         speaker.setData(DataComponentTypes.ITEM_NAME, Component.text("Speaker", NamedTextColor.YELLOW));
         speaker.setData(DataComponentTypes.ITEM_MODEL, speakerModelKey);
 
+        //unfortunately this head stuff isn't going to work overriding a mob head so it's an entity exclusive feature
+        speaker.unsetData(DataComponentTypes.EQUIPPABLE);
+
         //Adds Identifier tag
         speaker.editPersistentDataContainer(pdc -> {
             pdc.set(speakerIdentifierKey, PersistentDataType.STRING, "speaker");
@@ -151,6 +170,11 @@ public class Speaker {
             pdc.set(speakerIdentifierKey, PersistentDataType.STRING, "speaker");
         });
 
+        //make it equipable so it can be placed on head
+        Equippable.Builder equipBuilder = Equippable.equippable(EquipmentSlot.HEAD);
+        equipBuilder.assetId(null);
+        speaker.setData(DataComponentTypes.EQUIPPABLE, equipBuilder.build());
+
         //removes jukebox functionality
         speaker.unsetData(DataComponentTypes.JUKEBOX_PLAYABLE);
 
@@ -161,11 +185,7 @@ public class Speaker {
 
     public static boolean isSpeaker(ItemStack item)
     {
-        //todo don't forget to replace true here when entity version is ready
-        if(item.getType() != (RadioConfig.speaker_useEntity ? RadioConfig.speaker_entity_baseMaterial : RadioConfig.speaker_block_headType))
-            return false;
-
-        return item.getPersistentDataContainer().has(speakerIdentifierKey, PersistentDataType.STRING);
+        return item != null && item.getPersistentDataContainer().has(speakerIdentifierKey);
     }
 
     public static void addActiveSpeaker(Location location, String frequency)
@@ -222,7 +242,7 @@ public class Speaker {
     {
         //remove it from the list by checking the location
         activeSpeakers.entrySet().removeIf((session) -> {
-            return session.getKey().location().equals(location);
+            return Objects.equals(session.getKey().location(), location);
         });
     }
 
@@ -230,7 +250,7 @@ public class Speaker {
     {
         //remove it from the list by checking the location
         activeSpeakers.entrySet().removeIf((session) -> {
-            return session.getKey().entity().equals(entity);
+            return session.getKey().entity() == null || session.getKey().entity().equals(entity);
         });
     }
 
@@ -254,7 +274,6 @@ public class Speaker {
 
     public static AudioChannel createAudioChannelForSession(SpeakerSession session)
     {
-        Radio.logger.info("creating channel");
         if(session.entity() == null)
         {
             //we are dealing with a block speaker
