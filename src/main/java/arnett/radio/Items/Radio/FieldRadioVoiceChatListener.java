@@ -1,13 +1,10 @@
 package arnett.radio.Items.Radio;
 
-import arnett.radio.FrequencyManager;
+import arnett.radio.Frequencies.FrequencyManager;
 import arnett.radio.Items.Microphone.Microphone;
-import arnett.radio.Items.Speaker.Speaker;
 import arnett.radio.Radio;
 import arnett.radio.RadioConfig;
 import arnett.radio.RadioVoiceChat;
-import de.maxhenkel.voicechat.api.VoicechatConnection;
-import de.maxhenkel.voicechat.api.VoicechatServerApi;
 import de.maxhenkel.voicechat.api.events.MicrophonePacketEvent;
 import io.papermc.paper.event.player.PlayerInventorySlotChangeEvent;
 import org.bukkit.Bukkit;
@@ -17,10 +14,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
 
 public class FieldRadioVoiceChatListener implements Listener {
 

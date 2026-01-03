@@ -2,9 +2,9 @@ package arnett.radio;
 
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
-import org.jetbrains.annotations.Nullable;
 import org.bukkit.util.Vector;
 
+import java.util.HashMap;
 import java.util.List;
 
 //yeah, this system is much better
@@ -13,9 +13,9 @@ public class RadioConfig {
 
     // Top level
     public static boolean enabled;
-
     public static ConfigurationSection frequencyRepresentationDyes;
     public static String frequencySplitString;
+    public static HashMap<String, String> presetAudio;
 
     //field radio
     public static Material fieldRadio_baseMaterial;
@@ -44,24 +44,17 @@ public class RadioConfig {
     public static int speaker_cacheSize;
     public static int speaker_soundRange;
 
-    //  Audio Filter
-    public static boolean speaker_audioFilter_enabled;
-    public static double speaker_audioFilter_LPAlpha;
-    public static double speaker_audioFilter_HPAlpha;
-    public static int speaker_audioFilter_noiseFloor;
-    public static int speaker_audioFilter_crackleChance;
+        // Recipe
+        public static boolean speaker_recipe_basic_enabled;
+        public static List<String> speaker_recipe_basic_shape;
+        public static ConfigurationSection speaker_recipe_basic_ingredients;
 
-    // Recipe
-    public static boolean speaker_recipe_basic_enabled;
-    public static List<String> speaker_recipe_basic_shape;
-    public static ConfigurationSection speaker_recipe_basic_ingredients;
+        public static boolean speaker_recipe_retune_enabled;
+        public static List<String> speaker_recipe_retune_ingredients;
 
-    public static boolean speaker_recipe_retune_enabled;
-    public static List<String> speaker_recipe_retune_ingredients;
-
-    // block
-    public static Material speaker_block_headType;
-    public static Material speaker_block_wallHeadType;
+        // block
+        public static Material speaker_block_headType;
+        public static Material speaker_block_wallHeadType;
 
         // entity
         public static Material speaker_entity_baseMaterial;
@@ -132,12 +125,18 @@ public class RadioConfig {
         speaker_soundRange = Radio.config.getInt("speaker.sound-range");
         speaker_cacheSize = Radio.config.getInt("speaker.cache-size");
 
-            //  Audio Filter
-            speaker_audioFilter_enabled = Radio.config.getBoolean("speaker.audio-filter.enabled");
-            speaker_audioFilter_LPAlpha = Radio.config.getDouble("speaker.audio-filter.LP-alpha");
-            speaker_audioFilter_HPAlpha = Radio.config.getDouble("speaker.audio-filter.HP-alpha");
-            speaker_audioFilter_noiseFloor = Radio.config.getInt("speaker.audio-filter.noise-floor");
-            speaker_audioFilter_crackleChance = Radio.config.getInt("speaker.audio-filter.crackle-chance");
+        //preset audio
+        presetAudio = new HashMap<>(4);
+        ConfigurationSection setAudio = Radio.config.getConfigurationSection("preset-audio");
+        try {
+            setAudio.getValues(false).entrySet().forEach(entry->{
+                presetAudio.put(entry.getKey(), (String)entry.getValue());
+            });
+        }
+        catch (Exception e)
+        {
+            Radio.logger.warning("Error reading audio players from speaker config");
+        }
 
             // Recipe
                 //basic

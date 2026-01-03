@@ -1,6 +1,6 @@
 package arnett.radio.Items.Microphone;
 
-import arnett.radio.FrequencyManager;
+import arnett.radio.Frequencies.FrequencyManager;
 import arnett.radio.Items.CustomItemManager;
 import arnett.radio.Items.Speaker.Speaker;
 import arnett.radio.Radio;
@@ -230,8 +230,6 @@ public class MicrophoneListener implements Listener {
         //is the player attached
         if(!Microphone.attachedPlayers.containsKey(player))
             return;
-
-
 
         UUID playerId = e.getSenderConnection().getPlayer().getUuid();
 

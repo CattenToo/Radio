@@ -1,5 +1,7 @@
 package arnett.radio;
 
+import arnett.radio.Frequencies.FrequencyBroadcaster;
+import arnett.radio.Frequencies.FrequencyManager;
 import arnett.radio.Items.Microphone.MicrophoneListener;
 import arnett.radio.Items.Radio.FieldRadioVoiceChatListener;
 import de.maxhenkel.voicechat.api.*;
@@ -22,6 +24,7 @@ public class RadioVoiceChat implements VoicechatPlugin {
     public static HashMap<UUID, OpusEncoder> encoders = new HashMap<>();
 
 
+
     @Override
     public String getPluginId() {
         return "FieldRadio";
@@ -33,6 +36,8 @@ public class RadioVoiceChat implements VoicechatPlugin {
         if (api instanceof VoicechatServerApi serverApi) {
             RadioVoiceChat.api = serverApi;
         }
+
+        FrequencyManager.setUpBroadcasters();
     }
 
     public static OpusEncoder getEncoder(UUID id)

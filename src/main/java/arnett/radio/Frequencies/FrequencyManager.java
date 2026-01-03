@@ -1,13 +1,13 @@
-package arnett.radio;
+package arnett.radio.Frequencies;
 
 import arnett.radio.Items.CustomItemManager;
-import arnett.radio.Items.Radio.FieldRadio;
 import arnett.radio.Items.Radio.FieldRadioVoiceChat;
 import arnett.radio.Items.Speaker.Speaker;
+import arnett.radio.Radio;
+import arnett.radio.RadioConfig;
+import arnett.radio.RadioVoiceChat;
 import com.destroystokyo.paper.MaterialTags;
-import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
-import de.maxhenkel.voicechat.api.VoicechatServerApi;
 import de.maxhenkel.voicechat.api.packets.MicrophonePacket;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
@@ -16,7 +16,6 @@ import net.kyori.adventure.text.format.TextColor;
 import net.minecraft.ChatFormatting;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -25,8 +24,18 @@ import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.RecipeChoice;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.persistence.PersistentDataType;
-import org.w3c.dom.Text;
+import org.checkerframework.checker.units.qual.A;
 
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.UnsupportedAudioFileException;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.ShortBuffer;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
@@ -44,6 +53,11 @@ public class FrequencyManager {
     //hashbimap fast for getting stuff
     static HashBiMap<String, Integer> numberedDyes = HashBiMap.create();
 
+    //list of active broadcasters
+    static ArrayList<FrequencyBroadcaster> broadcasters = new ArrayList<>(4);
+
+
+
     public static void reload()
     {
         dyeMap.clear();
@@ -55,6 +69,50 @@ public class FrequencyManager {
             numberedDyes.put(key, i);
             i++;
         }
+
+        broadcasters.forEach(e -> {
+            e.stopPlaying();
+        });
+
+        if(RadioVoiceChat.api != null)
+            setUpBroadcasters();
+    }
+
+    public static void setUpBroadcasters()
+    {
+        //fill broadcaster up
+        RadioConfig.presetAudio.forEach((frequency, fileName) -> {
+            // try to load the audio file
+            try {
+
+                //get the audio file
+                AudioInputStream rawAudio = AudioSystem.getAudioInputStream(new File(Radio.singleton.getDataFolder(), fileName));
+
+                AudioFormat scvFormat = new AudioFormat(
+                        AudioFormat.Encoding.PCM_SIGNED,
+                        48000f,
+                        16,
+                        1,  // mono
+                        2,  // frame size = 2 bytes (16-bit)
+                        48000f,
+                        false  // little-endian
+                );
+
+                AudioInputStream scvAudio = AudioSystem.getAudioInputStream(scvFormat, rawAudio);
+
+                //create the audio broadcaster and add it to the list
+                broadcasters.add(new FrequencyBroadcaster(frequency, scvAudio.readAllBytes(), true, 0));
+
+                Radio.logger.info("Read Audio for " + frequency +" from : " + fileName);
+
+                scvAudio.close();
+                rawAudio.close();
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+        });
     }
 
     //used for shaped recipes
@@ -396,5 +454,13 @@ public class FrequencyManager {
 
         //send to field radios
         FieldRadioVoiceChat.sendPacketToFrequency(sender, audioData, frequency, packet);
+    }
+
+    public static void sendToFrequency(UUID sender, byte[] audioData, String frequency)
+    {
+        //send to speakers
+        Speaker.sendMicrophonePacketToFrequency(sender, audioData, frequency);
+
+        //does not send to field radios since those follow receiver's volume preferences for the sender which this cannot provide
     }
 }

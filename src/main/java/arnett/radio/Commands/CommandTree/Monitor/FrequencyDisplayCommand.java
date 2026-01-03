@@ -4,7 +4,7 @@ import arnett.radio.Commands.SubCommand;
 import arnett.radio.Items.Microphone.Microphone;
 import arnett.radio.Items.Speaker.Speaker;
 import arnett.radio.RadioConfig;
-import arnett.radio.FrequencyManager;
+import arnett.radio.Frequencies.FrequencyManager;
 import arnett.radio.Items.Radio.FieldRadioVoiceChat;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;

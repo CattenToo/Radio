@@ -1,10 +1,8 @@
 package arnett.radio.Items.Radio;
 
-import arnett.radio.FrequencyManager;
-import arnett.radio.RadioConfig;
+import arnett.radio.Frequencies.FrequencyManager;
 import arnett.radio.RadioVoiceChat;
 import de.maxhenkel.voicechat.api.VoicechatConnection;
-import de.maxhenkel.voicechat.api.VoicechatServerApi;
 import de.maxhenkel.voicechat.api.packets.MicrophonePacket;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;

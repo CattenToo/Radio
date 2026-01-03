@@ -1,7 +1,7 @@
 package arnett.radio.Items.Radio;
 
 import arnett.radio.RadioConfig;
-import arnett.radio.FrequencyManager;
+import arnett.radio.Frequencies.FrequencyManager;
 import arnett.radio.Radio;
 import com.destroystokyo.paper.MaterialTags;
 import io.papermc.paper.datacomponent.DataComponentTypes;
@@ -9,16 +9,12 @@ import io.papermc.paper.datacomponent.item.Consumable;
 import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.DyeColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.*;
 import org.bukkit.persistence.PersistentDataType;
-import org.checkerframework.checker.units.qual.A;
-import org.checkerframework.checker.units.qual.N;
 
 import java.util.*;
 

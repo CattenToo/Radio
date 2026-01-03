@@ -1,10 +1,9 @@
 package arnett.radio.Items.Radio;
 
 import arnett.radio.RadioConfig;
-import arnett.radio.FrequencyManager;
+import arnett.radio.Frequencies.FrequencyManager;
 import arnett.radio.Radio;
 import io.papermc.paper.event.player.AsyncChatEvent;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Keyed;
 import org.bukkit.block.Crafter;
 import org.bukkit.entity.Player;
