@@ -8,12 +8,14 @@ import arnett.radio.RadioConfig;
 import arnett.radio.RadioVoiceChat;
 import com.destroystokyo.paper.MaterialTags;
 import com.google.common.collect.HashBiMap;
+import de.maxhenkel.voicechat.api.VolumeCategory;
 import de.maxhenkel.voicechat.api.packets.MicrophonePacket;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.TextColor;
 import net.minecraft.ChatFormatting;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.ConfigurationSection;
@@ -462,5 +464,64 @@ public class FrequencyManager {
         Speaker.sendMicrophonePacketToFrequency(sender, audioData, frequency);
 
         //does not send to field radios since those follow receiver's volume preferences for the sender which this cannot provide
+    }
+
+    public static String getChannelCategory(UUID senderId) {
+
+        Player sender = Bukkit.getPlayer(senderId);
+        String channelId;
+        String channelName;
+
+        if(sender == null)
+        {
+            //this is not a player
+            if(senderId == FrequencyBroadcaster.brodcasterID)
+            {
+                channelName = "Broadcast";
+                channelId = "broadcast";
+            }
+            else
+            {
+                channelName = "Generic";
+                channelId = "generic";
+            }
+        }
+        else {
+            StringBuilder idBuilder = new StringBuilder(16);
+
+            for(char c : senderId.toString().substring(0, 16).toCharArray())
+            {
+                if (Character.isDigit(c))
+                {
+                    //adding 56 since UUIDs can only have a-f so it's just a bit higher for no overlap
+                    idBuilder.append((char)(c + 56));
+                }
+                else if(Character.isUpperCase(c))
+                {
+                    idBuilder.append((char)(c + 32));
+                } else if (c == '-') {
+                    idBuilder.append('_');
+                }
+            }
+
+            channelId = idBuilder.toString();
+            channelName = sender.getName();
+
+            Radio.logger.info(channelId);
+        }
+
+        // create the volume category for speakers.
+        // this just overwrites an existing one or creates one
+        // and is faster than checking first and returning it if already present
+        // since that haas to process the whole list
+        VolumeCategory speakers = RadioVoiceChat.api.volumeCategoryBuilder()
+                .setId(channelId)
+                .setName(channelName + " Radio")
+                .setDescription("Volume for player (or thing) through speakers")
+                .build();
+
+        RadioVoiceChat.api.registerVolumeCategory(speakers);
+
+        return channelId;
     }
 }
