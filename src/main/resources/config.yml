@@ -25,6 +25,12 @@ frequency-representation:
     PINK: "Pin"
   separating-string: "/"
 
+#preset audio files which can play on frequencies
+preset-audio:
+  # this will play "Rift.wav" on the RED/RED/RED/RED frequency
+  # must use what was set as the frequency separating-string here
+  RED/RED/RED/RED: "Rift.wav"
+
 # Field Radio
 fieldradio:
 
@@ -95,11 +101,6 @@ speaker:
     HP-alpha: 0.9 # Higher = less bass
     noise-floor: 40  # Constant hiss volume
     crackle-chance: 3000 # 1 in 3000 chance per sample
-
-  preset-audio:
-    # so this will play "rift.wav" on the RED/RED/RED/RED frequency
-    # must use what was set as the frequency separating-string here
-    RED/RED/RED/RED: "rift.wav"
 
   recipe:
     basic:

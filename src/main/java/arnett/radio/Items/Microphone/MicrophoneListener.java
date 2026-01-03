@@ -1,12 +1,11 @@
 package arnett.radio.Items.Microphone;
 
-import arnett.radio.FrequencyManager;
+import arnett.radio.Frequencies.FrequencyManager;
 import arnett.radio.Items.CustomItemManager;
 import arnett.radio.Items.Speaker.Speaker;
 import arnett.radio.Radio;
 import arnett.radio.RadioConfig;
 import arnett.radio.RadioVoiceChat;
-import de.maxhenkel.voicechat.api.audiochannel.AudioPlayer;
 import de.maxhenkel.voicechat.api.events.MicrophonePacketEvent;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import org.apache.commons.lang3.tuple.Pair;

@@ -1,9 +1,7 @@
 package arnett.radio.Items.Speaker;
 
-import arnett.radio.FrequencyManager;
+import arnett.radio.Frequencies.FrequencyManager;
 import arnett.radio.Items.CustomItemManager;
-import arnett.radio.Items.Radio.FieldRadio;
-import arnett.radio.Items.Radio.FieldRadioVoiceChat;
 import arnett.radio.Radio;
 import arnett.radio.RadioConfig;
 import arnett.radio.RadioVoiceChat;
@@ -11,9 +9,7 @@ import com.destroystokyo.paper.event.block.BlockDestroyEvent;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.event.block.BlockBreakBlockEvent;
 import io.papermc.paper.event.player.PlayerInventorySlotChangeEvent;
-import net.kyori.adventure.text.Component;
 import org.bukkit.*;
-import org.bukkit.attribute.Attribute;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Crafter;
 import org.bukkit.entity.*;
@@ -23,27 +19,19 @@ import org.bukkit.event.block.*;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
-import org.bukkit.event.entity.ItemSpawnEvent;
-import org.bukkit.event.inventory.ClickType;
-import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.event.world.EntitiesLoadEvent;
 import org.bukkit.event.world.EntitiesUnloadEvent;
-import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.util.Vector;
-import org.checkerframework.checker.units.qual.N;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.logging.Logger;
 
 @SuppressWarnings("UnstableApiUsage")
 public class SpeakerListener implements Listener {

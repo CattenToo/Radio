@@ -13,9 +13,9 @@ public class RadioConfig {
 
     // Top level
     public static boolean enabled;
-
     public static ConfigurationSection frequencyRepresentationDyes;
     public static String frequencySplitString;
+    public static HashMap<String, String> presetAudio;
 
     //field radio
     public static Material fieldRadio_baseMaterial;
@@ -43,7 +43,6 @@ public class RadioConfig {
     public static boolean speaker_useEntity;
     public static int speaker_cacheSize;
     public static int speaker_soundRange;
-    public static HashMap<String, String> speaker_presetAudio;
 
         // Recipe
         public static boolean speaker_recipe_basic_enabled;
@@ -127,11 +126,11 @@ public class RadioConfig {
         speaker_cacheSize = Radio.config.getInt("speaker.cache-size");
 
         //preset audio
-        speaker_presetAudio = new HashMap<>(4);
-        ConfigurationSection setAudio = Radio.config.getConfigurationSection("speaker.preset-audio");
+        presetAudio = new HashMap<>(4);
+        ConfigurationSection setAudio = Radio.config.getConfigurationSection("preset-audio");
         try {
             setAudio.getValues(false).entrySet().forEach(entry->{
-                speaker_presetAudio.put(entry.getKey(), (String)entry.getValue());
+                presetAudio.put(entry.getKey(), (String)entry.getValue());
             });
         }
         catch (Exception e)

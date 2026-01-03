@@ -6,7 +6,7 @@ import arnett.radio.Items.Speaker.Speaker;
 import arnett.radio.RadioConfig;
 import arnett.radio.Items.Speaker.SpeakerListener;
 import arnett.radio.Radio;
-import arnett.radio.FrequencyManager;
+import arnett.radio.Frequencies.FrequencyManager;
 import arnett.radio.Items.Radio.FieldRadio;
 import arnett.radio.Items.Radio.FieldRadioListener;
 import arnett.radio.Items.Radio.FieldRadioVoiceChatListener;

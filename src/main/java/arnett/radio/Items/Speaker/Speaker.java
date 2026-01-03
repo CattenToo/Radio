@@ -1,17 +1,14 @@
 package arnett.radio.Items.Speaker;
 
-import arnett.radio.FrequencyManager;
-import arnett.radio.Items.Speaker.SpeakerSession;
+import arnett.radio.Frequencies.FrequencyManager;
 import arnett.radio.Radio;
 import arnett.radio.RadioConfig;
 import arnett.radio.RadioVoiceChat;
 import com.destroystokyo.paper.MaterialTags;
-import com.google.common.collect.HashBiMap;
 import de.maxhenkel.voicechat.api.Entity;
 import de.maxhenkel.voicechat.api.audiochannel.AudioChannel;
 import de.maxhenkel.voicechat.api.audiochannel.EntityAudioChannel;
 import de.maxhenkel.voicechat.api.audiochannel.LocationalAudioChannel;
-import de.maxhenkel.voicechat.api.events.MicrophonePacketEvent;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.Equippable;
 import net.kyori.adventure.text.Component;
@@ -259,11 +256,14 @@ public class Speaker {
         //send the packet out to speakers
         try {
             activeSpeakers.forEach((session, map) -> {
+
                 //if they are the correct frequency
                 if(session.frequency().equals(frequency))
                 {
                     //get the channel belonging to the player, or create one if it isn't present
-                    map.computeIfAbsent(sender, (id) -> createAudioChannelForSession(session)).send(encodedAudio);
+                    map.computeIfAbsent(sender, (id) -> {
+                        return createAudioChannelForSession(session);
+                    }).send(encodedAudio);
                 }
             });
         }
@@ -281,7 +281,7 @@ public class Speaker {
 
             AudioChannel channel = RadioVoiceChat.api.createLocationalAudioChannel(
 
-                    //random, NOT player because client only allows one channel that way
+                    //random, NOT player, because client only allows one channel that way
                     UUID.randomUUID(),
 
                     //world

@@ -2,7 +2,7 @@ package arnett.radio.Commands.CommandTree.Give;
 
 import arnett.radio.Commands.SubCommand;
 import arnett.radio.RadioConfig;
-import arnett.radio.FrequencyManager;
+import arnett.radio.Frequencies.FrequencyManager;
 import arnett.radio.Items.Speaker.Speaker;
 import org.bukkit.entity.Player;
 
