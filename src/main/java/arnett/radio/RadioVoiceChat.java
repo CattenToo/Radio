@@ -7,6 +7,7 @@ import arnett.radio.Items.Radio.FieldRadioVoiceChatListener;
 import de.maxhenkel.voicechat.api.*;
 import de.maxhenkel.voicechat.api.events.EventRegistration;
 import de.maxhenkel.voicechat.api.events.MicrophonePacketEvent;
+import de.maxhenkel.voicechat.api.events.VoicechatServerStartedEvent;
 import de.maxhenkel.voicechat.api.opus.OpusDecoder;
 import de.maxhenkel.voicechat.api.opus.OpusEncoder;
 import org.bukkit.Bukkit;
@@ -85,15 +86,6 @@ public class RadioVoiceChat implements VoicechatPlugin {
     {
         registration.registerEvent(MicrophonePacketEvent.class, FieldRadioVoiceChatListener::onMicrophone);
         registration.registerEvent(MicrophonePacketEvent.class, MicrophoneListener::onMicrophone);
-
-        //create the volume category for speakers
-        VolumeCategory speakers = api.volumeCategoryBuilder()
-                .setId("speakers")
-                .setName("Speakers")
-                .setDescription("Volume of all speakers")
-                .build();
-
-        api.registerVolumeCategory(speakers);
     }
 
     public static short[] applyFilter(short[] decodedData, double LP_ALPHA, double HP_ALPHA, int NOISE_FLOOR, int CRACKLE_CHANCE)

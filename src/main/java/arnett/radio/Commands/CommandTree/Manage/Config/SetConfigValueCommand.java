@@ -139,7 +139,7 @@ public class SetConfigValueCommand implements SubCommand {
                     curr.append(args[i]).append(".");
                 }
 
-                curr.setLength(curr.length() - RadioConfig.frequencySplitString.length());
+                curr.setLength(curr.length() - 1);
 
                 return Radio.singleton.getConfig().getConfigurationSection(curr.toString()).getKeys(false).stream().toList();
             }

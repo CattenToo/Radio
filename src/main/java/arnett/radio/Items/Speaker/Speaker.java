@@ -6,6 +6,7 @@ import arnett.radio.RadioConfig;
 import arnett.radio.RadioVoiceChat;
 import com.destroystokyo.paper.MaterialTags;
 import de.maxhenkel.voicechat.api.Entity;
+import de.maxhenkel.voicechat.api.VolumeCategory;
 import de.maxhenkel.voicechat.api.audiochannel.AudioChannel;
 import de.maxhenkel.voicechat.api.audiochannel.EntityAudioChannel;
 import de.maxhenkel.voicechat.api.audiochannel.LocationalAudioChannel;
@@ -262,7 +263,7 @@ public class Speaker {
                 {
                     //get the channel belonging to the player, or create one if it isn't present
                     map.computeIfAbsent(sender, (id) -> {
-                        return createAudioChannelForSession(session);
+                        return createAudioChannelForSession(session, sender);
                     }).send(encodedAudio);
                 }
             });
@@ -272,14 +273,16 @@ public class Speaker {
 
     }
 
-    public static AudioChannel createAudioChannelForSession(SpeakerSession session)
+    public static AudioChannel createAudioChannelForSession(SpeakerSession session, UUID sender)
     {
+        AudioChannel channel;
+
         if(session.entity() == null)
         {
             //we are dealing with a block speaker
             Location location = session.location();
 
-            AudioChannel channel = RadioVoiceChat.api.createLocationalAudioChannel(
+            channel = RadioVoiceChat.api.createLocationalAudioChannel(
 
                     //random, NOT player, because client only allows one channel that way
                     UUID.randomUUID(),
@@ -292,16 +295,17 @@ public class Speaker {
                     RadioVoiceChat.api.createPosition(
                             location.blockX(), location.blockY(), location.blockZ()
                     ));
-            channel.setCategory("speakers");
-            return channel;
         }
         else
         {
             //we are dealing with an entity speaker
-            AudioChannel channel = RadioVoiceChat.api.createEntityAudioChannel(UUID.randomUUID(),session.entity());
-            channel.setCategory("speakers");
-            return channel;
+            channel = RadioVoiceChat.api.createEntityAudioChannel(UUID.randomUUID(),session.entity());
+
         }
+
+        //get category ID for senderID
+        channel.setCategory(FrequencyManager.getChannelCategory(sender));
+        return channel;
     }
 
     public static void tagChunkOfSpeaker(Chunk chunk, Location blockLocation, String frequency){
