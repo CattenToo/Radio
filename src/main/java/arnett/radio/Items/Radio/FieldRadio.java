@@ -83,7 +83,7 @@ public class FieldRadio {
         final ItemStack radio = ItemStack.of(RadioConfig.fieldRadio_baseMaterial);
 
         //sets Item visuals
-        radio.setData(DataComponentTypes.ITEM_NAME, Component.text("Field Radio", NamedTextColor.YELLOW));
+        radio.setData(DataComponentTypes.ITEM_NAME, Component.text("Field Radio"));
         radio.setData(DataComponentTypes.ITEM_MODEL, radioModelKey);
 
         //sets Item Component Data
